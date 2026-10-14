@@ -1,6 +1,6 @@
 # INTEGRATION NOTES
 
-Actualizado: 2026-10-13. Unity 6000.3.16f1. Rama art-integration. Sin remoto.
+Actualizado: 2026-10-13. Unity 6000.3.16f1. Rama art-integration. Origin existente detectado al cierre: https://github.com/Nazareth75/RiftHuntersAR.git; no configurado por el agente, sin push del agente.
 
 ## Integración con equipo
 Antes de añadir el repositorio del grupo inspeccionar ramas/historial, versión Unity, estructura, Packages y ProjectSettings y explicar estrategia al usuario. Conservar GUID/meta. No mover proyecto ni apropiarse de escenas de compañeros. No reset --hard, clean -fd, push --force ni push.
@@ -55,3 +55,7 @@ Tools/BuildAndroidPrototype.ps1 es auxiliar de empaquetado de datos generados pr
 No añadir características avanzadas hasta validar tracking, ancla, cuatro impactos y score en Android real.
 
 Build final confirmado en Unity: Succeeded, 0 errores, 1 advertencia. La prueba de salud/score se repitió con el Editor normal y pasó. Conservar el cambio preexistente no relacionado en UnityConnectSettings sin incluirlo en el commit técnico.
+
+## Estado Git al cierre
+Se detectó origin agregado por fuera de las operaciones del agente. Ramas locales: art-integration y main; referencia local origin/main presente. No se hizo fetch, pull, push ni integración remota en este trabajo. Antes de integrar el equipo siguen siendo obligatorias la inspección de versión, paquetes, ajustes e historial y la explicación de estrategia.
+Se registra el orden de preloadedAssets que Unity guardó al terminar el build (mismas referencias, sin cambio funcional). UnityConnectSettings.asset conserva su cambio previo sin revertirlo ni incluirlo en commits.

@@ -4,7 +4,7 @@ Actualizado: 2026-10-13. MVP técnico creado y APK de desarrollo generado/verifi
 
 ## Proyecto y Git
 Raíz: C:\Users\HP\Desktop\tareas para subir hoy\program multimedia\juegoHunter\RiftHuntersAR
-Unity 6000.3.16f1 (a56f230f6470), URP. Rama art-integration. Sin remoto ni push.
+Unity 6000.3.16f1 (a56f230f6470), URP. Rama art-integration. Origin existente detectado al cierre: https://github.com/Nazareth75/RiftHuntersAR.git. El agente no añadió remotos ni hizo push.
 Force Text y Visible Meta Files. Proyecto original y SampleScene conservados.
 
 ## Paquetes resueltos
@@ -98,3 +98,7 @@ No hay APK Playtest avanzado: movimiento, oleadas, armas adicionales y boss espe
 
 ## Comprobación final
 Unity Editor volvió a ejecutar el smoke test: SUCCESS: test (20:49, hora Bolivia). Build final de la herramienta actualizada: SUCCESS: build; resultado Unity Succeeded, 0 errores, 1 advertencia (símbolos de diagnóstico). APK final nuevamente verificado: firma v2 válida, manifest/ARM64 correctos. ADB devices sigue vacío: no se instaló en teléfono ni se afirmó tracking real. La copia descargable es idéntica al APK final.
+
+## Estado Git al cierre
+Se detectó origin agregado por fuera de las operaciones del agente. Ramas locales: art-integration y main; referencia local origin/main presente. No se hizo fetch, pull, push ni integración remota en este trabajo. Antes de integrar el equipo siguen siendo obligatorias la inspección de versión, paquetes, ajustes e historial y la explicación de estrategia.
+Se registra el orden de preloadedAssets que Unity guardó al terminar el build (mismas referencias, sin cambio funcional). UnityConnectSettings.asset conserva su cambio previo sin revertirlo ni incluirlo en commits.
