@@ -28,8 +28,14 @@ for side in (-1,1):
         a.wedge(f'HandTalon_{side}_{claw}',(side*(1.22+claw*.15),-.14,1.45),(side*(1.23+claw*.17),-.25,1.07),.065,a.dark,'Arm_'+str(side))
     a.mesh(f'FaceEye_{side}',[(side*.07,-.43,2.75),(side*.28,-.38,2.69),(side*.17,-.46,2.61)],[(0,1,2)],a.energy,'Head')
     a.beam(f'ChestEnergyVein_{side}',(side*.09,-.48,1.97),(side*.51,-.34,2.27),.022,.012,a.energy,'Body',5)
+    for row,z in enumerate((1.35,1.70,2.05,2.36)):
+        a.plate(f'RearCarapace_{side}_{row}',(side*.32,.37,z),.64,.59,.15,(-1.08,side*.22,side*.09),'Armor',row%2==0)
+    a.plate(f'RearCrownGuard_{side}',(side*.18,.21,2.68),.45,.50,.13,(-1.10,side*.19,0),'Head',True)
+    a.plate(f'RearShoulderGuard_{side}',(side*.94,.27,2.28),.65,.69,.16,(-1.0,side*.27,0),'Shoulder_'+str(side),True)
 a.ring('CentralCoreArmor',(0,-.38,1.94),.42,.28,.20,a.dark,'Armor',12)
 a.ico('CentralRedCrystal',(0,-.46,1.94),(.28,.13,.34),a.energy,'WeakPoint_Core',3)
+for j,z in enumerate((1.6,2.0,2.4)):
+    a.wedge(f'RearSpinalFin_{j}',(0,.45,z),(0,.78,z+.18),.12,a.dark,'Armor')
 # Several disconnected plates and shards remain independently parented for later animation.
 for i in range(20):
     theta=2*math.pi*i/20
