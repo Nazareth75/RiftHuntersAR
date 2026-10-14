@@ -15,6 +15,7 @@ namespace RiftHunters.Combate
         [SerializeField] private Transform objetivo;
         [UnityEngine.Serialization.FormerlySerializedAs("spawnSpacing")]
         [SerializeField, Min(0)] private float separacionAparicion = 0.7f;
+        private Transform contenedorEnemigos;
         private Coroutine aparicion;
         private readonly List<Enemigo> generados = new List<Enemigo>();
         private bool esperandoFinal;
@@ -24,11 +25,12 @@ namespace RiftHunters.Combate
         public bool EstaPausado { get; private set; }
         public int EnemigosVivos => generados.Count;
 
-        public void Configurar(Enemigo prefab, Transform origen, Transform jugador)
+        public void Configurar(Enemigo prefab, Transform origen, Transform jugador, Transform contenedor = null)
         {
             prefabEnemigo = prefab;
             puntoAparicion = origen;
             objetivo = jugador;
+            contenedorEnemigos = contenedor;
         }
 
         public void GenerarGrupo(int cantidad, float intervalo)
@@ -48,6 +50,7 @@ namespace RiftHunters.Combate
             Enemigo prefabGrupo = prefabEnemigo;
             Transform objetivoGrupo = objetivo;
             Transform origenGrupo = puntoAparicion;
+            Transform contenedorGrupo = contenedorEnemigos;
             // Permite guardar la coroutine antes de generar el primer enemigo.
             yield return null;
             for (int i = 0; i < cantidad; i++)
@@ -55,7 +58,7 @@ namespace RiftHunters.Combate
                 while (EstaPausado) yield return null;
                 if (origenGrupo == null || objetivoGrupo == null) break;
                 Vector3 desplazamiento = origenGrupo.right * ((i - (cantidad - 1) * 0.5f) * separacionAparicion);
-                Enemigo enemigo = Instantiate(prefabGrupo, origenGrupo.position + desplazamiento, origenGrupo.rotation);
+                Enemigo enemigo = Instantiate(prefabGrupo, origenGrupo.position + desplazamiento, origenGrupo.rotation, contenedorGrupo);
                 enemigo.AsignarObjetivo(objetivoGrupo);
                 generados.Add(enemigo);
                 enemigo.Retirado += AlRetirarEnemigo;

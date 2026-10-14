@@ -86,3 +86,9 @@ Al terminar o reintentar, llamar Limpiar().
 - Si se agregan varios grupos antes de despejar la zona, el evento espera a todos.
 - Limpiar cancela enemigos y apariciones sin emitir EnemigosAgotados ni sumar puntos.
 - En PruebaCombate, usar P o PAUSAR para comprobar la pausa durante una recarga.
+
+## Integracion con la base compartida
+La escena integrada es Assets/Scenes/Gameplay/ARCombate.unity.
+Consultar Assets/Documentation/INTEGRACION_COMBATE.md para conexiones, balance y pruebas.
+EnlaceCombateAR adapta nuestro dano de 1/2 unidades a los 100 HP del jugador compartido.
+La escena conserva el portal anclado y conecta puntos de normal/rapido/tanque al ScoreManager.

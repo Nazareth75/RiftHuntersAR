@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Gameplay/ARCombate.unity
+    guid: 454f672c352a4e39a6085c1a01073132
+  - enabled: 0
     path: Assets/Scenes/Gameplay/ARGame.unity
     guid: e9beda356b7608f458e0477bdf70607e
   - enabled: 1

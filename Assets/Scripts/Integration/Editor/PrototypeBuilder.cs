@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
+#if UNITY_ANDROID
 using UnityEditor.Android;
+#endif
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEditor.XR.ARCore;
@@ -329,6 +331,7 @@ namespace RiftHuntersAR.Integration.Editor
         [MenuItem("Rift Hunters/Build Android Prototype")]
         public static void Build()
         {
+#if UNITY_ANDROID
             if(EditorUserBuildSettings.activeBuildTarget!=BuildTarget.Android) throw new Exception("Switch to Android before build");
             Directory.CreateDirectory("Builds/Android");
             string previousSdk=AndroidExternalToolsSettings.sdkRootPath;
@@ -346,7 +349,9 @@ namespace RiftHuntersAR.Integration.Editor
             try
             {
                 if(File.Exists(Path.Combine(localSdk,"cmdline-tools/latest/bin/sdkmanager.bat"))) AndroidExternalToolsSettings.sdkRootPath=localSdk;
-                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Playtest.apk",target=BuildTarget.Android,options=BuildOptions.Development});
+                string escenaBuild = File.Exists("Assets/Scenes/Gameplay/ARCombate.unity")
+                    ? "Assets/Scenes/Gameplay/ARCombate.unity" : ScenePath;
+                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{escenaBuild},locationPathName="Builds/Android/RiftHuntersAR_Playtest.apk",target=BuildTarget.Android,options=BuildOptions.Development});
             }
             finally
             {
@@ -378,6 +383,9 @@ namespace RiftHuntersAR.Integration.Editor
             }
             File.WriteAllText("Temp/RiftBuildReport.txt",report.summary.result+"\nErrors: "+report.summary.totalErrors+"\nWarnings: "+report.summary.totalWarnings);
             if(report.summary.result!=BuildResult.Succeeded) throw new Exception("Android build failed; inspect Editor.log and build report");
+#else
+            throw new Exception("Instala Android Build Support en Unity Hub y cambia el proyecto a Android antes de generar el APK.");
+#endif
         }
     }
 }

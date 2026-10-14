@@ -21,6 +21,7 @@ namespace RiftHuntersAR.Integration
         [SerializeField] private PortalSpawnPoint portalPrefab;
         [SerializeField] private EnemyHealth enemyPrefab;
         [SerializeField] private PlasmaWeapon weapon;
+        [SerializeField] private EnlaceCombateAR enlaceCombate;
         [SerializeField] private ScoreManager score;
         [SerializeField] private Text statusText;
         [SerializeField] private Text scoreText;
@@ -39,6 +40,9 @@ namespace RiftHuntersAR.Integration
         private float playerFlashUntil;
         private string state = "SCANNING";
         private int wave;
+        private Button[] botonesArmas;
+        private bool aplicacionPausada;
+        private int EnemigosRestantes => enlaceCombate != null ? enlaceCombate.EnemigosVivos : spawner.AliveCount;
         private void Awake()
         {
             player = gameObject.AddComponent<PlayerHealth>();
@@ -46,6 +50,15 @@ namespace RiftHuntersAR.Integration
             player.Died += GameOver;
             player.Changed += PlayerChanged;
             spawner.EnemyKilled += score.AddEnemyScore;
+            if (enlaceCombate != null)
+            {
+                if (!enlaceCombate.Inicializar(weapon.AimCamera, player, score))
+                {
+                    enabled = false;
+                    return;
+                }
+                weapon.ConectarSistema(enlaceCombate.Armas);
+            }
             var parent = statusText.transform.parent;
             playerText = MakeLabel(parent, "Player", new Vector2(0,-280), new Vector2(.5f,1));
             ammoText = MakeLabel(parent, "Ammo", new Vector2(0,450), new Vector2(.5f,0));
@@ -53,6 +66,15 @@ namespace RiftHuntersAR.Integration
             retryButton = MakeButton(parent, "RETRY", new Vector2(0,650), Retry);
             reloadButton = MakeButton(parent, "RELOAD", new Vector2(0,50), Reload);
             retryButton.gameObject.SetActive(false);
+            if (enlaceCombate != null)
+            {
+                CrearBotonesArmas(parent);
+                var rectDisparo = shootButton.GetComponent<RectTransform>();
+                rectDisparo.anchoredPosition = new Vector2(0, 290);
+                rectDisparo.sizeDelta = new Vector2(600, 100);
+                ammoText.rectTransform.anchoredPosition = new Vector2(0, 540);
+                feedbackText.rectTransform.anchoredPosition = new Vector2(0, 430);
+            }
             PlayerChanged();
         }
         private Text MakeLabel(Transform parent, string name, Vector2 position, Vector2 anchor)
@@ -70,6 +92,27 @@ namespace RiftHuntersAR.Integration
             var label=MakeLabel(go.transform,name+" Label",Vector2.zero,new Vector2(.5f,.5f)); label.text=name; label.rectTransform.sizeDelta=new Vector2(500,90);
             var button=go.GetComponent<Button>(); button.onClick.AddListener(action); return button;
         }
+        private void CrearBotonesArmas(Transform contenedor)
+        {
+            string[] nombres = { "PLASMA", "ELECTRICA", "EXPLOSIVA" };
+            botonesArmas = new Button[3];
+            for (int i = 0; i < nombres.Length; i++)
+            {
+                int indice = i;
+                Button boton = MakeButton(contenedor, nombres[i],
+                    new Vector2((i - 1) * 330, 160), () => enlaceCombate.SeleccionarArma(indice));
+                boton.GetComponent<RectTransform>().sizeDelta = new Vector2(300, 75);
+                boton.GetComponentInChildren<Text>().rectTransform.sizeDelta = new Vector2(300, 75);
+                botonesArmas[i] = boton;
+            }
+        }
+
+        private void OnApplicationPause(bool pausa)
+        {
+            aplicacionPausada = pausa;
+            if (enlaceCombate != null && pausa) enlaceCombate.Pausar(true);
+        }
+
         private void PlayerChanged()
         {
             int hearts=Mathf.CeilToInt(player.CurrentHealth/(100f/3));
@@ -80,6 +123,7 @@ namespace RiftHuntersAR.Integration
         private void GameOver()
         {
             state="GAME_OVER"; weapon.Ready=false; spawner.StopMovement();
+            if (enlaceCombate != null) enlaceCombate.Detener();
             if(loop!=null) StopCoroutine(loop);
             retryButton.gameObject.SetActive(true);
             UpdateFeedback("GAME OVER");
@@ -87,7 +131,9 @@ namespace RiftHuntersAR.Integration
         private void Retry()
         {
             if(loop!=null) StopCoroutine(loop);
-            spawner.Clear(); player.Retry(); score.ResetScore(); weapon.Reload();
+            spawner.Clear();
+            if (enlaceCombate != null) enlaceCombate.Reiniciar();
+            player.Retry(); score.ResetScore(); weapon.RestaurarMunicion();
             retryButton.gameObject.SetActive(false);
             loop=StartCoroutine(Spawn(activePortal));
         }
@@ -111,7 +157,7 @@ namespace RiftHuntersAR.Integration
             UpdateScore(score.Score);
         }
         private void UpdateScore(int value) { scoreText.text = $"SCORE: {value}"; }
-        private void UpdateFeedback(string value) { feedbackText.text = value; feedbackUntil=Time.unscaledTime+1.5f; if(hitMarker!=null) { hitMarker.text=value.StartsWith("HIT") ? "X" : ""; hitMarker.color=Color.cyan; } }
+        private void UpdateFeedback(string value) { feedbackText.text = value; feedbackUntil=Time.unscaledTime+1.5f; if(hitMarker!=null) { hitMarker.text=(value.StartsWith("HIT") || value.StartsWith("Impacto:") || value.StartsWith("Enemigo eliminado") || value.StartsWith("Cadena electrica:") || value.StartsWith("Explosion:")) ? "X" : ""; hitMarker.color=Color.cyan; } }
         private bool TouchPosition(out Vector2 position)
         {
             if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
@@ -133,10 +179,21 @@ namespace RiftHuntersAR.Integration
         private void Update()
         {
             if(Time.unscaledTime>playerFlashUntil) playerText.color=Color.white;
-            ammoText.text=$"PLASMA {weapon.CurrentAmmo} / {weapon.MagazineSize}";
+            ammoText.text=$"{weapon.NombreArma.ToUpperInvariant()} {weapon.CurrentAmmo} / {weapon.MagazineSize}";
             if(Time.unscaledTime>feedbackUntil) { hitMarker.text=""; feedbackText.text=""; }
-            bool tracking = ARSession.state == ARSessionState.SessionTracking;
-            shootButton.interactable = tracking && weapon.Ready;
+            bool tracking = !aplicacionPausada && ARSession.state == ARSessionState.SessionTracking;
+            if (enlaceCombate != null)
+            {
+                enlaceCombate.Pausar(!tracking || state != "WAVE");
+                if (botonesArmas != null)
+                    foreach (Button boton in botonesArmas)
+                        boton.interactable = tracking && state == "WAVE" && !enlaceCombate.Armas.Actual.EstaRecargando;
+                reloadButton.interactable = tracking && state == "WAVE"
+                    && !enlaceCombate.Armas.Actual.EstaRecargando
+                    && enlaceCombate.Armas.Actual.Municion < enlaceCombate.Armas.Actual.CapacidadCargador;
+            }
+            shootButton.interactable = tracking && weapon.Ready
+                && (enlaceCombate == null || (!enlaceCombate.Armas.Actual.EstaRecargando && weapon.CurrentAmmo > 0));
             if (!tracking)
             {
                 statusText.text = ARSession.state == ARSessionState.Unsupported ? "AR NOT SUPPORTED" : "SCAN ENVIRONMENT";
@@ -145,7 +202,7 @@ namespace RiftHuntersAR.Integration
             if (placed)
             {
                 foreach (ARPlane plane in planes.trackables) { var r = plane.GetComponent<MeshRenderer>(); if (r != null) r.enabled = false; }
-                statusText.text = state == "WAVE" ? $"WAVE {wave} | ENEMIES {spawner.AliveCount}" : state;
+                statusText.text = state == "WAVE" ? $"WAVE {wave} | ENEMIES {EnemigosRestantes}" : state;
                 return;
             }
             bool hasPlane = false;
@@ -172,7 +229,7 @@ namespace RiftHuntersAR.Integration
         }
         private IEnumerator TrackedWait(float seconds)
         {
-            while(seconds>0) { if(ARSession.state==ARSessionState.SessionTracking) seconds-=Time.deltaTime; yield return null; }
+            while(seconds>0) { if(!aplicacionPausada && ARSession.state==ARSessionState.SessionTracking) seconds-=Time.deltaTime; yield return null; }
         }
         private IEnumerator Spawn(PortalSpawnPoint portal)
         {
@@ -185,15 +242,16 @@ namespace RiftHuntersAR.Integration
                 state="WAVE"; weapon.Ready=true;
                 for(int i=0;i<counts[wave-1];i++)
                 {
-                    while(ARSession.state!=ARSessionState.SessionTracking) yield return null;
+                    while(aplicacionPausada || ARSession.state!=ARSessionState.SessionTracking) yield return null;
                     if(player.IsDead || portal==null) yield break;
-                    spawner.Spawn(enemyPrefab,portal,weapon.AimCamera.transform,player);
+                    if (enlaceCombate != null) enlaceCombate.GenerarEnemigo(portal, wave, i);
+                    else spawner.Spawn(enemyPrefab,portal,weapon.AimCamera.transform,player);
                     yield return TrackedWait(2);
                 }
-                while(spawner.AliveCount>0) yield return null;
+                while(EnemigosRestantes>0) yield return null;
                 weapon.Ready=false; state="WAVE_COMPLETE"; UpdateFeedback("WAVE COMPLETE");
                 yield return TrackedWait(3);
-                if(wave<3) { state="NEXT_WAVE"; weapon.Reload(); yield return TrackedWait(1); }
+                if(wave<3) { state="NEXT_WAVE"; weapon.RestaurarMunicion(); yield return TrackedWait(1); }
             }
             state="VICTORY"; weapon.Ready=false; retryButton.gameObject.SetActive(true); UpdateFeedback("VICTORY");
         }
