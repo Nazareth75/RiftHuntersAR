@@ -20,6 +20,16 @@ namespace RiftHunters.Combate
                 GameObject instancia = Instantiate(modelo, transform);
                 instancia.transform.localPosition = Vector3.zero;
                 instancia.transform.localRotation = Quaternion.identity;
+                // The new enemy logic moves the technical root without rotating it.
+                // Face only the approved visual toward the camera; preserve its geometry and collider root.
+                VisualMotion orientacion = instancia.GetComponent<VisualMotion>();
+                if (orientacion == null)
+                {
+                    orientacion = instancia.AddComponent<VisualMotion>();
+                    orientacion.fragments = System.Array.Empty<Transform>();
+                    orientacion.energy = System.Array.Empty<Renderer>();
+                }
+                orientacion.faceCamera = true;
                 Collider[] colliders = instancia.GetComponentsInChildren<Collider>(true);
                 for (int i = 0; i < colliders.Length; i++) colliders[i].enabled = false;
                 EnemyHealth[] vidas = instancia.GetComponentsInChildren<EnemyHealth>(true);

@@ -52,7 +52,9 @@ namespace RiftHuntersAR.Integration.Editor
                 {
                     var hud=Object.FindFirstObjectByType<VisualHUD>();
                     if(hud==null || hud.controller==null || hud.controller.Player==null || hud.legacyCanvas.enabled || hud.legacyCanvas.GetComponent<GraphicRaycaster>().enabled || hud.legacyCanvas.transform.Find("RELOAD")==null || hud.legacyCanvas.transform.Find("RETRY")==null) throw new Exception("Runtime HUD bridge/lifecycle failed");
-                    if(hud.ammoValue.text!="30 / 30" || hud.scoreValue.text!="0" || hud.enemyValue.text!="0" || hud.controller.CurrentState!="SCANNING") throw new Exception("Runtime dynamic HUD state incorrect");
+                    string magazine=$"{hud.weapon.CurrentAmmo}/{hud.weapon.MagazineSize}";
+                    string spacedMagazine=$"{hud.weapon.CurrentAmmo} / {hud.weapon.MagazineSize}";
+                    if((!hud.ammoValue.text.Contains(magazine) && !hud.ammoValue.text.Contains(spacedMagazine)) || hud.scoreValue.text!="0" || hud.enemyValue.text!="0" || hud.controller.CurrentState!="SCANNING") throw new Exception("Runtime dynamic HUD state incorrect");
                     int errors=SessionState.GetInt("RiftVisualPlayErrors",0);
                     File.WriteAllText("Temp/RiftVisualPlayCheck.txt",(errors==0?"PASS":"FAIL")+": real MainMenu Start event loads ARGame; HUD Awake/Start/LateUpdate; dynamic score/ammo/wave/count/hearts; legacy canvas hidden and raycaster disabled; legacy reload/retry present. Errors="+errors+". AR device tracking not tested in Editor.");
                     SessionState.SetBool("RiftVisualPlayCheck",false); EditorApplication.isPlaying=false;

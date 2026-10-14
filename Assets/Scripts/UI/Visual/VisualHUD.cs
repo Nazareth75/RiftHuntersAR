@@ -81,7 +81,7 @@ namespace RiftHuntersAR.UI.Visual
                 || text.StartsWith("Impacto") || text.StartsWith("La electricidad"));
             if (shot && plasmaShot != null && muzzle != null) Instantiate(plasmaShot, muzzle.position, muzzle.rotation);
             // Cosmetic query only. Never applies damage, ammo or score.
-            if (text.StartsWith("HIT") && plasmaHit != null && weapon != null && weapon.AimCamera != null)
+            if ((text.StartsWith("HIT") || text.StartsWith("Impacto:")) && plasmaHit != null && weapon != null && weapon.AimCamera != null)
             {
                 var ray = weapon.AimCamera.ViewportPointToRay(new Vector3(.5f,.5f,0));
                 if (Physics.Raycast(ray, out var result, 20, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
