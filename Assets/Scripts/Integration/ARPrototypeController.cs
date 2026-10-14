@@ -42,6 +42,73 @@ namespace RiftHuntersAR.Integration
         private int wave;
         private Button[] botonesArmas;
         private bool aplicacionPausada;
+        private bool pruebaEscritorio;
+        private bool pausaPrueba;
+        public bool SeguimientoDisponible => !aplicacionPausada && !pausaPrueba
+            && (pruebaEscritorio || ARSession.state == ARSessionState.SessionTracking);
+        public Camera CamaraJuego => weapon.AimCamera;
+        public string EstadoPartida => state;
+        public int OleadaActual => wave;
+        public int PuntosActuales => score.Score;
+        public float VidaJugador => player != null ? player.CurrentHealth : 100;
+        public int CantidadEnemigos => EnemigosRestantes;
+
+        public void HabilitarPruebaEscritorio()
+        {
+#if UNITY_EDITOR
+            pruebaEscritorio = true;
+            weapon.HabilitarPruebaEscritorio();
+#endif
+        }
+
+        public void IniciarPruebaEscritorio(Vector3 posicion)
+        {
+#if UNITY_EDITOR
+            if (!pruebaEscritorio || placed || portalPrefab == null) return;
+            var origen = new GameObject("Origen del portal de prueba");
+            origen.transform.position = posicion;
+            PortalSpawnPoint portal = Instantiate(portalPrefab, posicion, Quaternion.identity, origen.transform);
+            ComenzarPartida(portal);
+#endif
+        }
+
+        public void CambiarPausaPrueba()
+        {
+#if UNITY_EDITOR
+            if (!pruebaEscritorio) return;
+            pausaPrueba = !pausaPrueba;
+            if (enlaceCombate != null) enlaceCombate.Pausar(!SeguimientoDisponible || state != "WAVE");
+#endif
+        }
+
+        public void DispararPrueba()
+        {
+#if UNITY_EDITOR
+            if (pruebaEscritorio && SeguimientoDisponible && state == "WAVE") weapon.Shoot();
+#endif
+        }
+
+        public void RecargarPrueba()
+        {
+#if UNITY_EDITOR
+            if (pruebaEscritorio && SeguimientoDisponible) Reload();
+#endif
+        }
+
+        public void ReintentarPrueba()
+        {
+#if UNITY_EDITOR
+            if (pruebaEscritorio && (state == "GAME_OVER" || state == "VICTORY")) Retry();
+#endif
+        }
+
+        private void ComenzarPartida(PortalSpawnPoint portal)
+        {
+            placed = true;
+            activePortal = portal;
+            state = "PORTAL_PLACED";
+            loop = StartCoroutine(Spawn(portal));
+        }
         private int EnemigosRestantes => enlaceCombate != null ? enlaceCombate.EnemigosVivos : spawner.AliveCount;
         private void Awake()
         {
@@ -131,6 +198,7 @@ namespace RiftHuntersAR.Integration
         private void Retry()
         {
             if(loop!=null) StopCoroutine(loop);
+            pausaPrueba = false;
             spawner.Clear();
             if (enlaceCombate != null) enlaceCombate.Reiniciar();
             player.Retry(); score.ResetScore(); weapon.RestaurarMunicion();
@@ -181,7 +249,7 @@ namespace RiftHuntersAR.Integration
             if(Time.unscaledTime>playerFlashUntil) playerText.color=Color.white;
             ammoText.text=$"{weapon.NombreArma.ToUpperInvariant()} {weapon.CurrentAmmo} / {weapon.MagazineSize}";
             if(Time.unscaledTime>feedbackUntil) { hitMarker.text=""; feedbackText.text=""; }
-            bool tracking = !aplicacionPausada && ARSession.state == ARSessionState.SessionTracking;
+            bool tracking = SeguimientoDisponible;
             if (enlaceCombate != null)
             {
                 enlaceCombate.Pausar(!tracking || state != "WAVE");
@@ -196,13 +264,19 @@ namespace RiftHuntersAR.Integration
                 && (enlaceCombate == null || (!enlaceCombate.Armas.Actual.EstaRecargando && weapon.CurrentAmmo > 0));
             if (!tracking)
             {
+                if (pruebaEscritorio) { statusText.text = "PAUSA DE PRUEBA: P PARA REANUDAR"; return; }
                 statusText.text = ARSession.state == ARSessionState.Unsupported ? "AR NOT SUPPORTED" : "SCAN ENVIRONMENT";
                 return;
             }
             if (placed)
             {
-                foreach (ARPlane plane in planes.trackables) { var r = plane.GetComponent<MeshRenderer>(); if (r != null) r.enabled = false; }
+                if (planes != null) foreach (ARPlane plane in planes.trackables) { var r = plane.GetComponent<MeshRenderer>(); if (r != null) r.enabled = false; }
                 statusText.text = state == "WAVE" ? $"WAVE {wave} | ENEMIES {EnemigosRestantes}" : state;
+                return;
+            }
+            if (pruebaEscritorio)
+            {
+                statusText.text = "PRUEBA DE ESCRITORIO: ENTER PARA COLOCAR PORTAL";
                 return;
             }
             bool hasPlane = false;
@@ -225,11 +299,11 @@ namespace RiftHuntersAR.Integration
             }
             // Keep tracking active; the anchor owns the placed content during plane refinements.
 
-            activePortal=portal; state="PORTAL_PLACED"; loop=StartCoroutine(Spawn(portal));
+            ComenzarPartida(portal);
         }
         private IEnumerator TrackedWait(float seconds)
         {
-            while(seconds>0) { if(!aplicacionPausada && ARSession.state==ARSessionState.SessionTracking) seconds-=Time.deltaTime; yield return null; }
+            while(seconds>0) { if(SeguimientoDisponible) seconds-=Time.deltaTime; yield return null; }
         }
         private IEnumerator Spawn(PortalSpawnPoint portal)
         {
@@ -242,9 +316,14 @@ namespace RiftHuntersAR.Integration
                 state="WAVE"; weapon.Ready=true;
                 for(int i=0;i<counts[wave-1];i++)
                 {
-                    while(aplicacionPausada || ARSession.state!=ARSessionState.SessionTracking) yield return null;
+                    while(!SeguimientoDisponible) yield return null;
                     if(player.IsDead || portal==null) yield break;
-                    if (enlaceCombate != null) enlaceCombate.GenerarEnemigo(portal, wave, i);
+                    if (enlaceCombate != null)
+                    {
+                        // La coroutine puede reanudarse antes del siguiente Update.
+                        enlaceCombate.Pausar(false);
+                        enlaceCombate.GenerarEnemigo(portal, wave, i);
+                    }
                     else spawner.Spawn(enemyPrefab,portal,weapon.AimCamera.transform,player);
                     yield return TrackedWait(2);
                 }

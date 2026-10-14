@@ -20,6 +20,13 @@ namespace RiftHuntersAR.Combat
         public event Action<string> Feedback;
         private float nextShot;
         private int lastShotFrame = -1;
+        private bool pruebaEscritorio;
+        public void HabilitarPruebaEscritorio()
+        {
+#if UNITY_EDITOR
+            pruebaEscritorio = true;
+#endif
+        }
         // Mantiene las interfaces del prototipo para su escena y sus pruebas.
         public void ConectarSistema(RiftHunters.Combate.GestorArmas sistema)
         {
@@ -48,7 +55,7 @@ namespace RiftHuntersAR.Combat
         }
         public void Shoot()
         {
-            Fire(ARSession.state == ARSessionState.SessionTracking, Time.unscaledTime, Time.frameCount);
+            Fire(pruebaEscritorio || ARSession.state == ARSessionState.SessionTracking, Time.unscaledTime, Time.frameCount);
         }
         internal void Fire(bool tracking, float now, int frame)
         {

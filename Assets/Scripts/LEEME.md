@@ -92,3 +92,13 @@ La escena integrada es Assets/Scenes/Gameplay/ARCombate.unity.
 Consultar Assets/Documentation/INTEGRACION_COMBATE.md para conexiones, balance y pruebas.
 EnlaceCombateAR adapta nuestro dano de 1/2 unidades a los 100 HP del jugador compartido.
 La escena conserva el portal anclado y conecta puntos de normal/rapido/tanque al ScoreManager.
+
+## Partida completa sin telefono
+Escena: Assets/Scenes/Pruebas/PartidaIntegrada.unity.
+Menu: Rift Hunters > Probar partida integrada.
+Enter: colocar portal o reintentar al terminar; Espacio: disparar; R: recargar; 1/2/3: armas; P: pausa.
+Flechas o mouse con boton derecho: apuntar.
+Se recomienda Game con aspecto 9:16.
+Usa el mismo controlador y enlace del juego integrado, con tracking y portal simulados solo en Editor.
+Se probo en Play: tres oleadas, 15 bajas, Victory con 1850 puntos, Game Over por ataques y Retry.
+Test Playtest carga su propia escena de forma temporal; ya no depende de la escena activa del usuario.

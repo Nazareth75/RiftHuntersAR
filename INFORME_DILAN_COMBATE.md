@@ -12,12 +12,13 @@ Se entrega el código fuente y los assets de un combate independiente, conectado
 
 No se está entregando una nueva APK. Dilan decidió posponer la build y compartir primero la rama para que el equipo continúe trabajando. El arte, los efectos y la interfaz actuales son provisionales.
 
-Hay tres escenas con objetivos diferentes:
+Hay cuatro escenas con objetivos diferentes:
 
 | Escena | Para qué sirve |
 | --- | --- |
 | Assets/Scenes/Gameplay/ARCombate.unity | Continuar el juego integrado: AR del compañero más nuestras tres armas y variantes de enemigo. Es la primera escena habilitada para el build. |
 | Assets/Scenes/Gameplay/ARGame.unity | Conservar el prototipo original del compañero como referencia y para sus pruebas existentes. |
+| Assets/Scenes/Pruebas/PartidaIntegrada.unity | Ejecutar en el editor la partida completa con portal de prueba, cuenta regresiva, oleadas, armas, vida, puntos, Victory, Game Over y Retry. Usa el controlador integrado real. |
 | Assets/Scenes/Pruebas/PruebaCombate.unity | Probar armas, daño, enemigos y pausa con una cámara normal, sin depender del teléfono ni del tracking AR. |
 
 ARGame y ARCombate no ejecutan dos combates en paralelo. ARGame conserva el combate original; ARCombate utiliza el módulo integrado.
@@ -198,7 +199,7 @@ La pérdida de tracking y las interrupciones de la aplicación pausan el combate
 - Cargadores independientes al cambiar.
 - Puntuación de variantes y escala de daño sobre la vida compartida.
 
-**No comprobado en esta integración:** tracking real, permisos/cámara en dispositivo, ciclo completo de oleadas, apariencia/rendimiento en Android, recuperación tras suspender la aplicación y una nueva APK.
+**No comprobado en dispositivo:** tracking real, permisos/cámara, ciclo completo en AR, apariencia/rendimiento en Android, recuperación tras suspender la aplicación y una nueva APK. El ciclo completo de gameplay ya fue comprobado en Play con la prueba de escritorio descrita abajo.
 
 ## 9. Incidencia local de paquetes y estado de build
 
@@ -236,7 +237,7 @@ Si ya tienen un clon, primero guardar o confirmar sus cambios locales y después
 
 Si la rama Devmodule/dilan ya existe localmente, usar git switch Devmodule/dilan y revisar su estado antes de actualizarla. No sobrescribir cambios locales para cambiar de rama.
 
-Abrir con Unity 6000.3.16f1 y esperar la importación de paquetes. Probar primero PruebaCombate sin AR. Para continuar el juego compartido, abrir ARCombate.
+Abrir con Unity 6000.3.16f1 y esperar la importación de paquetes. Probar primero PruebaCombate sin AR. Para recorrer la partida completa sin telefono, usar Rift Hunters > Probar partida integrada. Para continuar el juego AR compartido, abrir ARCombate.
 
 Que todos revisen esta base no significa que deban trabajar sobre una única rama: cada persona mantiene su rama de módulo y coordina la integración. Evitar modificar simultáneamente la misma escena.
 
@@ -248,3 +249,34 @@ Historial de esta entrega:
 - Este informe se entrega en un commit adicional de documentación.
 
 Se conservó un respaldo local de configuración antes del merge. .vscode, cachés, Library, Temp y builds no forman parte de la entrega. main no se modificó.
+
+## 12. Correccion posterior y partida completa en el editor
+
+Se corrigio Test Playtest: antes buscaba ARPrototypeController en la escena abierta y producia una referencia nula si estaba abierta PruebaCombate. Ahora abre ARGame temporalmente, valida las referencias y conserva la escena del usuario. Si Play esta activo, solicita detenerlo mediante un aviso.
+
+Se agrego Assets/Scenes/Pruebas/PartidaIntegrada.unity y el componente PruebaIntegradaEscritorio. Este utiliza el mismo ARPrototypeController, EnlaceCombateAR, SistemaArmas y prefabs de enemigos. Solo sustituye el tracking, la entrada del telefono y la colocacion real por una camara normal y un portal de prueba.
+
+El modo de escritorio se habilita solo en Unity Editor. ARCombate y el build Android mantienen el tracking real. PartidaIntegrada no se agrego a las escenas del build.
+
+La prueba completa detecto y permitio corregir una carrera de estado: al iniciar cada oleada, el generador podia seguir pausado y omitir el primer enemigo. Ahora se reanuda antes de solicitar cada aparicion, despues de comprobar que el seguimiento esta disponible.
+
+Verificacion realizada en Play, en una copia temporal:
+- Portal de prueba y cuenta regresiva.
+- Plasma conectado: dano y municion.
+- Pausa de enemigos/apariciones durante una recarga, y continuacion al reanudar.
+- Las tres oleadas completas: 15 enemigos eliminados y Victory con 1850 puntos.
+- Game Over por ataques del enemigo.
+- Retry despues de Victory y Game Over: vida 100, puntos 0, cargadores restaurados y nueva cuenta regresiva.
+- Test Playtest ejecutado desde PruebaCombate sin referencia nula y sin cambiar la escena activa.
+
+Para probarlo manualmente:
+1. Detener Play, limpiar la consola y esperar la compilacion.
+2. Pulsar Rift Hunters > Probar partida integrada. Se abre la escena guardada y entra en Play.
+3. Dar foco a Game; se recomienda una relacion de aspecto 9:16 para ver el HUD vertical.
+4. Enter coloca el portal y comienza la partida.
+5. Espacio dispara; R recarga; 1/2/3 seleccionan armas.
+6. Flechas o boton derecho del mouse y movimiento permiten apuntar.
+7. P pausa/reanuda.
+8. Tras Victory o Game Over, usar RETRY o Enter para repetir.
+
+Esta prueba valida gameplay integrado, no deteccion real de superficies, anclas AR ni permisos de camara.

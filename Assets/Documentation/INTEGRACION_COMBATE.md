@@ -62,3 +62,11 @@ Compilacion completa y pruebas automatizadas en Unity 6000.3.16f1, sobre una cop
 - Puntuacion: 150 + 300 = 450. Vida: ataque de 68 deja 32 HP.
 Estas pruebas de Editor no validan tracking AR real, el recorrido completo de oleadas ni el aspecto en telefono.
 No se genero APK en este equipo.
+
+## Prueba completa en escritorio y correcciones
+PartidaIntegrada.unity permite recorrer el controlador real en el editor. Se abre desde Rift Hunters > Probar partida integrada.
+El modo de escritorio solo se habilita en Editor y no sustituye el tracking de ARCombate en Android.
+Test Playtest ahora abre ARGame temporalmente y mantiene la escena activa original.
+Se corrigio la primera aparicion omitida en cada oleada por reanudacion tardia del generador.
+Prueba de Play completa: portal/cuenta regresiva, pausa/recarga, tres oleadas, 15 bajas, Victory con 1850 puntos, Game Over por ataques y Retry desde ambos finales.
+Las pruebas de tracking, anclas y permisos siguen pendientes en telefono.
