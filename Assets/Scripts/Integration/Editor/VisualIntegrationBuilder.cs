@@ -325,7 +325,8 @@ namespace RiftHuntersAR.Integration.Editor
             File.WriteAllText("Temp/RiftVisualHierarchy.txt",string.Join("\n",boss.GetComponentsInChildren<Transform>(true).Select(t=>t.name)));
             foreach(string name in new[]{"WeakPoint_Left","WeakPoint_Core","WeakPoint_Right"}) if(!boss.GetComponentsInChildren<Transform>(true).Any(t=>t.name==name)) throw new Exception("Missing boss object "+name);
             foreach(var mat in Directory.GetFiles(Mats,"M_*.mat").Select(p=>AssetDatabase.LoadAssetAtPath<Material>(p.Replace('\\','/')))) if(mat==null || mat.shader==null || ShaderUtil.ShaderHasError(mat.shader)) throw new Exception("Invalid material/shader");
-            File.WriteAllText("Temp/RiftVisualValidation.txt","PASS: scene, HUD references, prefabs, Basic components + one collider + AimPoint, portal SpawnPoint, three separated boss weak points, URP shaders.\n"+File.ReadAllText("Temp/RiftVisualBounds.txt"));
+            string bounds = File.Exists("Temp/RiftVisualBounds.txt") ? File.ReadAllText("Temp/RiftVisualBounds.txt") : "Optional import bounds cache absent after Editor restart; approved models were not reimported or rebuilt.";
+            File.WriteAllText("Temp/RiftVisualValidation.txt","PASS: scene, HUD references, prefabs, Basic components + one collider + AimPoint, portal SpawnPoint, three separated boss weak points, URP shaders.\n"+bounds);
         }
         static void Effects()
         {

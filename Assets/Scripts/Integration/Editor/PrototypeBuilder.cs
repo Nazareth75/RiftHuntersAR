@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
+#if UNITY_ANDROID
 using UnityEditor.Android;
+#endif
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEditor.XR.ARCore;
@@ -264,16 +266,33 @@ namespace RiftHuntersAR.Integration.Editor
         [MenuItem("Rift Hunters/Test Playtest")]
         public static void PlaytestTests()
         {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("Deten Play antes de ejecutar las pruebas del prototipo.");
+                return;
+            }
+            var anterior = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            var escenaPrueba = UnityEngine.SceneManagement.SceneManager.GetSceneByPath(ScenePath);
+            bool estabaAbierta = escenaPrueba.IsValid() && escenaPrueba.isLoaded;
+            if (!estabaAbierta) escenaPrueba = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            try
+            {
             CombatTest();
             var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/EnemyBasicPlaceholder.prefab");
+            if (prefab == null || prefab.GetComponent<EnemyHealth>() == null)
+                throw new Exception("Falta el prefab original o su componente EnemyHealth.");
             if(new SerializedObject(prefab.GetComponent<EnemyHealth>()).FindProperty("maxHealth").floatValue!=100) throw new Exception("Prefab HP is not 100");
             if(prefab.GetComponentsInChildren<Collider>().Length!=1) throw new Exception("Unexpected enemy colliders");
-            var scene=EditorSceneManager.GetActiveScene();
-            var controller=Object.FindFirstObjectByType<ARPrototypeController>();
+
+            var controller = escenaPrueba.GetRootGameObjects()
+                .SelectMany(raiz => raiz.GetComponentsInChildren<ARPrototypeController>(true)).FirstOrDefault();
+            if (controller == null) throw new Exception("ARGame no contiene ARPrototypeController.");
             var refs=new SerializedObject(controller);
             var button=(Button)refs.FindProperty("shootButton").objectReferenceValue;
+            if (button == null) throw new Exception("Falta la referencia al boton SHOOT en ARGame.");
             if(button.onClick.GetPersistentEventCount()!=0) throw new Exception("Unexpected persistent SHOOT listener");
             var source=(PlasmaWeapon)refs.FindProperty("weapon").objectReferenceValue;
+            if (source == null) throw new Exception("Falta la referencia a PlasmaWeapon en ARGame.");
             if(new SerializedObject(source).FindProperty("damage").floatValue!=25) throw new Exception("Scene damage not 25");
             var enemy=Object.Instantiate(prefab).GetComponent<EnemyHealth>();
             var cameraGo=new GameObject("Test camera");
@@ -325,10 +344,30 @@ namespace RiftHuntersAR.Integration.Editor
                 File.WriteAllText("Temp/RiftPlaytestTests.txt","PASS: actual prefab 100 HP, scene 25 damage, one collider, zero persistent listeners; physics raycast four hits 75/50/25/0; duplicate frame/cooldown rejected; ammo zero/reload; player death and retry; horizontal movement clamp, tracking pause and attack cooldown.");
             }
             finally { Object.DestroyImmediate(enemy.gameObject); Object.DestroyImmediate(cameraGo); Object.DestroyImmediate(systemGo); Object.DestroyImmediate(playerGo); }
+                        Debug.Log("[Rift] PASS: pruebas originales completadas; la escena del usuario se conserva.");
+            }
+            finally
+            {
+                if (!estabaAbierta)
+                {
+                    EditorSceneManager.CloseScene(escenaPrueba, true);
+                    if (anterior.IsValid()) UnityEngine.SceneManagement.SceneManager.SetActiveScene(anterior);
+                }
+            }
+        }
+
+        [MenuItem("Rift Hunters/Probar partida integrada")]
+        public static void ProbarPartidaIntegrada()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
+            EditorSceneManager.OpenScene("Assets/Scenes/Pruebas/PartidaIntegrada.unity");
+            EditorApplication.isPlaying = true;
         }
         [MenuItem("Rift Hunters/Build Android Prototype")]
         public static void Build()
         {
+#if UNITY_ANDROID
             if(EditorUserBuildSettings.activeBuildTarget!=BuildTarget.Android) throw new Exception("Switch to Android before build");
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel36;
             AssetDatabase.SaveAssets();
@@ -380,6 +419,9 @@ namespace RiftHuntersAR.Integration.Editor
             }
             File.WriteAllText("Temp/RiftBuildReport.txt",report.summary.result+"\nErrors: "+report.summary.totalErrors+"\nWarnings: "+report.summary.totalWarnings);
             if(report.summary.result!=BuildResult.Succeeded) throw new Exception("Android build failed; inspect Editor.log and build report");
+#else
+            throw new Exception("Instala Android Build Support en Unity Hub y cambia el proyecto a Android antes de generar el APK.");
+#endif
         }
     }
 }
