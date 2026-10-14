@@ -16,7 +16,17 @@ namespace RiftHuntersAR.Integration
         private ScoreManager puntuacion;
         private Camera camara;
         public GestorArmas Armas { get; private set; }
+        public GeneradorEnemigos Generador => generador;
         public int EnemigosVivos => generador != null ? generador.EnemigosVivos : 0;
+        public int Derrotados { get; private set; }
+
+        public void CompletarSiFalta(CatalogoPartida catalogo)
+        {
+            if (catalogo == null) return;
+            if (prefabSistemaArmas == null) prefabSistemaArmas = catalogo.sistemaArmas;
+            if (prefabsEnemigos != null && prefabsEnemigos.Length == 3 && prefabsEnemigos[0] != null) return;
+            prefabsEnemigos = new[] { catalogo.normal, catalogo.rapido, catalogo.tanque };
+        }
 
         public bool Inicializar(Camera camaraAR, PlayerHealth vida, ScoreManager puntos)
         {
@@ -46,7 +56,11 @@ namespace RiftHuntersAR.Integration
                 enemigo.gameObject.AddComponent<RespuestaVisualEnemigo>();
         }
 
-        private void AlEliminarEnemigo(Enemigo enemigo) => puntuacion.AgregarPuntos(enemigo.Puntos);
+        private void AlEliminarEnemigo(Enemigo enemigo)
+        {
+            Derrotados++;
+            puntuacion.AgregarPuntos(enemigo.Puntos);
+        }
         private void AlAtacarJugador(int unidades) => jugador.TakeDamage(unidades * danoPorUnidad);
 
         public void GenerarEnemigo(PortalSpawnPoint portal, int oleada, int posicion)
@@ -79,6 +93,7 @@ namespace RiftHuntersAR.Integration
 
         public void Reiniciar()
         {
+            Derrotados = 0;
             if (generador != null) generador.Limpiar();
             if (Armas != null) Armas.ReiniciarArmas();
         }

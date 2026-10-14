@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f8b6c41d0e54a7b9c1e3a85f6d24b17, type: 3}
+  m_Name: CatalogoPartida
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHuntersAR.Integration.CatalogoPartida
+  sistemaArmas: {fileID: 7760006019073975390, guid: 34fc5b768d5437542acfc725b94cbac9, type: 3}
+  normal: {fileID: 1439154136192036894, guid: 26851273946dfd042910bec29435a423, type: 3}
+  rapido: {fileID: 983118592333090009, guid: dae5df36766f5ca45a771410c173005d, type: 3}
+  tanque: {fileID: 6378672636784049242, guid: 8d248aa03faa051438c0a572f6b21fda, type: 3}
+  jefe: {fileID: 8800000000000000002, guid: b7e3c9a14f284d6e8c0a5d91f2e64b38, type: 3}
