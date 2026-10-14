@@ -1,83 +1,88 @@
 # RIFT HUNTERS AR - PROJECT STATUS
 
-Actualizado: 2026-10-13. Alcance completado: Fase 1 (preparación local).
+Actualizado: 2026-10-13. MVP técnico creado; build Android en curso, validación física pendiente.
 
-## Proyecto inspeccionado
-- Raíz real: C:\Users\HP\Desktop\tareas para subir hoy\program multimedia\juegoHunter\RiftHuntersAR
-- juegoHunter es la carpeta contenedora. El proyecto no fue movido ni recreado.
-- Unity: 6000.3.16f1, revisión a56f230f6470. Plantilla Universal 3D / URP.
-- Serialización: Force Text. Version Control: Visible Meta Files.
-- Unity permanece abierto; no se cerró ni se eliminó Library.
+## Proyecto y Git
+Raíz: C:\Users\HP\Desktop\tareas para subir hoy\program multimedia\juegoHunter\RiftHuntersAR
+Unity 6000.3.16f1 (a56f230f6470), URP. Rama art-integration. Sin remoto ni push.
+Force Text y Visible Meta Files. Proyecto original y SampleScene conservados.
 
-## Paquetes instalados relevantes
-| Paquete | Versión en manifest |
-| --- | --- |
-| Universal RP | 17.3.0 |
-| Input System | 1.19.0 |
-| uGUI | 2.0.0 |
-| Test Framework | 1.6.0 |
-| AI Navigation | 2.0.12 |
-| Timeline | 1.8.12 |
-| Visual Scripting | 1.9.11 |
+## Paquetes resueltos
+- AR Foundation 6.3.5.
+- Google ARCore XR Plugin 6.3.5.
+- XR Plug-in Management 4.5.4 (dependencia).
+- XR Core Utilities 2.6.0 (dependencia).
+- URP 17.3.0, Input System 1.19.0, uGUI 2.0.0.
+- No se añadió OpenXR ni un proveedor VR. Legacy Input Helpers es dependencia transitiva de XR Management.
 
-AR Foundation, ARCore y XR Plug-in Management no figuran en manifest.
-manifest.json y packages-lock.json no se modificaron.
+El primer intento de descarga de AR Foundation falló por ENOTFOUND/ECONNRESET. La resolución posterior recuperó el paquete oficial y Unity pudo compilar y ejecutar la herramienta de Editor. No se cambiaron versiones para ocultar el error.
+Fuentes oficiales y API instalada:
+https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@6.3/manual/project-setup/install-arfoundation.html
+https://docs.unity3d.com/Packages/com.unity.xr.arcore@6.3/manual/project-configuration-arcore.html
 
-## Compatibilidad AR verificada
-La documentación oficial de AR Foundation 6.3 indica compatibilidad con Unity 6000.0 o superior y proveedor Android ARCore 6.3. Las páginas consultadas corresponden a 6.3.5 para ambos paquetes. Candidatos: AR Foundation 6.3.5 y ARCore 6.3.5; confirmar disponibilidad en Package Manager antes de instalar. No usar prereleases ni mezclar líneas de versión.
+## Escena
+Assets/Scenes/Gameplay/ARGame.unity, creada y serializada por Unity.
+AR Session + ARInputManager; XR Origin; Camera Offset; AR Camera con ARCameraManager, ARCameraBackground y TrackedPoseDriver del Input System; ARPlaneManager horizontal, ARRaycastManager y ARAnchorManager. La colocación usa AttachAnchor de la API 6.3 antes de instanciar el portal.
+ARGame es primera escena habilitada; SampleScene se conserva. El build del prototipo incluye solamente ARGame.
 
-Fuentes consultadas el 2026-10-13:
-- https://docs.unity3d.com/Packages/com.unity.xr.arfoundation@6.3/manual/project-setup/install-arfoundation.html
-- https://docs.unity3d.com/Packages/com.unity.xr.arcore@6.3/manual/project-configuration-arcore.html
+## Scripts
+- Scripts/AR/PortalSpawnPoint: referencia explícita al SpawnPoint.
+- Scripts/Enemies/EnemyHealth: 100 HP, daño y muerte con evento único.
+- Scripts/Combat/PlasmaWeapon: raycast central, 25 daño, rango 20 m; disparo deshabilitado sin tracking.
+- Scripts/Game/ScoreManager: +100 por eliminación, sin persistencia.
+- Scripts/Integration/ARPrototypeController: Input System, exclusión de toques sobre UI, colocación única, spawn tras 1 segundo, UI y puntuación.
+- Scripts/Integration/Editor/PrototypeBuilder: generación inicial sin sobrescribir ARGame, configuración Android, smoke test y build. Menús bajo Rift Hunters.
 
-Instalar un paquete no habilita por sí solo el proveedor ARCore. La prueba real sigue pendiente.
+## Prefabs y arte
+- Prefabs/Portal/PortalPlaceholder: raíz técnica, Visual con cilindro y SpawnPoint.
+- Prefabs/Enemies/EnemyBasicPlaceholder: raíz EnemyHealth, Visual con cápsula, HitCollider separado y AimPoint.
+- Prefabs/Portal/PlanePlaceholder: mesh AR temporal sin collider físico.
+- Art/Materials: PortalPlaceholder, EnemyPlaceholder y PlanePlaceholder (URP Unlit).
+Todo es PENDIENTE DE DISEÑO; ningún recurso artístico final creado. Cambiar Visual preservando raíz, scripts, collider y SpawnPoint.
 
-## Escenas, scripts y prefabs
-- Existente: Assets/Scenes/SampleScene.unity, incluida en EditorBuildSettings.
-- Scripts existentes: Readme y ReadmeEditor de la plantilla; ningún script de gameplay añadido.
-- Prefabs de juego: ninguno todavía.
-- Carpetas preparadas según el plan del equipo, con .meta estables para Git.
-- Pendientes: MainMenu, ARGame y ArtIntegrationTest; no se crearon escenas vacías.
-- Materiales y assets URP existentes conservados en Assets/Settings.
+## Android configurado
+- Build Target Android.
+- Identificador provisional: com.rifthunters.ar.
+- Producto: RIFT HUNTERS AR.
+- Portrait, ARM64, IL2CPP, OpenGLES3, SDK mínimo 25.
+- API 25 verificada en ARCoreBuildProcessor de 6.3.5 para Unity 6000.3 con GLES3.
+- ARCore loader asignado a Android, Initialize XR on Startup habilitado.
+- ARCore requerido y Depth opcional: no usamos Depth.
+- Mobile URP pipeline en Graphics/Quality y ARBackgroundRendererFeature en Mobile_Renderer.
+- Cámara/permisos: verificar manifest del APK generado; ARCore administra el acceso, autorización física aún pendiente.
+- Objetivo 30 FPS, geometría simple, materiales Unlit, sin luces ni partículas del juego.
 
-## Android observado
-- Scripting backend: IL2CPP (Android: 1).
-- Target architectures: ARM64 (2).
-- Minimum SDK: 25; Target SDK: automático (0).
-- Application identifier actual: com.UnityTechnologies.com.unity.template.urpblank.
-- Input: Input System (activeInputHandler: 1).
-- SDK/NDK/JDK y módulo Android: reportados por el usuario; no revalidados en esta fase.
-- Plataforma activa del Editor: no verificada desde la interfaz.
+## Flujo implementado
+Escanear -> detectar plano horizontal -> tocar área sin UI -> un portal -> esperar 1 s -> un enemigo estático -> apuntar con teléfono -> SHOOT -> cuatro impactos -> enemigo eliminado -> SCORE: 100.
+Estados temporales SCAN ENVIRONMENT, TAP TO PLACE PORTAL, SPAWNING, READY, TARGET ELIMINATED y AR NOT SUPPORTED.
+Mira centrada y botón inferior; feedback HIT/MISS. Al perder tracking el disparo se deshabilita.
+No hay movimiento, vida del jugador, oleadas, otras armas ni boss: requieren estabilidad del MVP en teléfono primero.
 
-## Qué funciona y qué falta
-Funciona: estructura de plantilla conservada, repositorio local, exclusiones Unity, rama art-integration y documentación.
-Falta: instalar/configurar AR, escena técnica, portal, enemigo, disparo, puntuación y APK probado.
-No hay gameplay probado ni APK generado. No se afirma compilación sin verificar en Unity.
+## Pruebas realizadas
+- Unity compiló y ejecutó PrototypeBuilder.Create: SUCCESS.
+- Smoke test de EnemyHealth/ScoreManager en Editor: 3 impactos dejan 25 HP y score 0; cuarto impacto produce una muerte y score 100; impactos/Die posteriores no duplican score. PASS.
+- Este smoke test no prueba cámara, tracking, colocación ni disparo táctil en hardware.
+- ADB ejecutado: lista de dispositivos vacía. No se instaló ni probó AR físicamente.
+- Arranque de ARGame en Play Mode: UI visible y cero errores rojos; seis advertencias por ausencia de proveedor AR de Editor. No es una prueba de tracking.
+- El primer build falló por ausencia de SDK cmdline-tools/latest. SDK local preparado bajo Builds/Toolchain/AndroidSDK, con plataformas/build-tools/platform-tools/CMake existentes copiados y Command-line Tools 16 oficial descargado.
+- ZIP 16 verificado contra SHA1 32787c10f55911fd109848906b1275723e79f659 del repositorio oficial Google. sdkmanager ejecutado con JDK17 devuelve 16.0.
+- Reintento posterior encontró CMake 3.22.1 faltante en la copia local; se copió la versión existente del SDK de Unity. Nuevo build en curso, resultado/APK pendientes.
 
-## Controles previstos (no implementados)
-Escanear piso/mesa, tocar superficie para colocar portal, mover físicamente el teléfono para apuntar con mira central y pulsar SHOOT. Una sola arma Plasma y un EnemyBasicPlaceholder inicialmente.
+## Cómo probar en teléfono
+1. Dispositivo Android compatible con ARCore; conectar y habilitar depuración USB, aceptar autorización en el teléfono.
+2. Instalar Builds/Android/RiftHuntersAR_Prototype.apk cuando exista y esté validado.
+3. Abrir y aceptar cámara. Escanear mesa/piso con luz y textura; esperar planos temporales.
+4. Tocar plano fuera del botón. Verificar un solo portal y un enemigo tras 1 segundo.
+5. Mover teléfono hasta alinear la mira con cápsula; cuatro impactos deben eliminarla y dar exactamente 100 puntos.
+6. Probar fallo de puntería, toques sobre SHOOT antes de placement, pérdida/recuperación de tracking y suspensión/reanudación.
+7. Registrar modelo, Android, resultados y errores en adb logcat. Reiniciar aplicación para una nueva prueba: no existe botón RESTART aún.
 
-## Arte
-PENDIENTE DE DISEÑO: portal, criaturas, armas, HUD, iconos, botones, logo y demás arte final. Usar solo placeholders temporales. Los futuros modelos 3D reemplazarán el hijo visual del prefab conservando lógica y referencias.
+## Limitaciones conocidas
+No afirmar AR operativo en dispositivo hasta prueba física. Actualmente no hay teléfono autorizado detectado.
+Primer build IL2CPP y cambio de plataforma pueden tardar varios minutos por importación de paquetes/shaders.
+Se recuperó el control de Unity mediante Computer Use y se cerró el aviso modal de SDK. La herramienta de Editor registra diagnósticos propios en Logs/RiftBuild.log.
+No se modificó configuración global de Git. Builds, cachés y logs ignorados.
 
-## Instrucciones de prueba actuales
-1. Volver al Editor y esperar la importación automática; si no actualiza, Assets > Refresh.
-2. Comprobar las nuevas carpetas en Project y abrir Window > General > Console.
-3. Confirmar que no aparecen errores nuevos. Esta verificación del Editor está pendiente.
-4. En Git: git status --short --branch; git log --oneline -5.
-
-## Preparación AR para Fase 2
-1. Window > Package Management > Package Manager; Unity Registry; seleccionar AR Foundation, versión estable 6.3.5 si disponible; Install. Repetir con Google ARCore XR Plugin 6.3.5. Si no aparece, verificar Versions; no sustituir por una versión aleatoria.
-2. File > Build Profiles > Android; Switch Platform (añadir perfil Android si todavía no existe).
-3. Edit > Project Settings > XR Plug-in Management; instalar XR Plug-in Management si se solicita; pestaña Android; activar ARCore.
-4. XR Plug-in Management > Project Validation > Android: revisar los errores y aplicar Fix individualmente; el validador define el SDK mínimo de esta combinación.
-5. Player > Android > Other Settings: confirmar IL2CPP y ARM64; elegir el identificador del equipo antes del APK. ARCore admite OpenGLES y Vulkan; verificar la API elegida en el teléfono real.
-6. Configurar el renderer URP móvil para fondo AR siguiendo la documentación de la versión instalada.
-7. Crear prueba en Scenes/Tests: AR Session, XR Origin, AR Camera con Camera Manager/Background, Plane Manager y Raycast Manager. Revisar API instalada antes de escribir scripts.
-8. Probar en Android compatible con ARCore: permiso de cámara, tracking, detección horizontal, colocación, disparo y puntuación. Registrar modelo del teléfono y resultado.
-
-## Problemas conocidos
-- Ruta del proyecto un nivel debajo de la ruta indicada inicialmente.
-- Identificador Android todavía de plantilla; AR aún no instalado ni validado.
-- Git puede mostrar avisos LF/CRLF por la configuración existente. No se cambió configuración global.
-- La prueba de superficies y tracking exige un dispositivo compatible; no se validó hardware.
+## Herramientas Android locales
+El SDK original instalado en Unity carece de cmdline-tools moderno. El prototipo usa Builds/Toolchain/AndroidSDK (ignorado por Git), sin modificar Program Files. Unity selecciona este SDK para el build. Restaurar el SDK original mediante la API pública falló porque valida la ruta incompleta; la preferencia External Tools puede quedar apuntando al SDK local. Revisar esta preferencia antes de compilar otro proyecto y reparar el módulo SDK de Unity cuando sea conveniente. No se aceptaron licencias nuevas ni se usaron credenciales administrativas.
+Fuentes: https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/android/getting-started/sdksetup/supported-dependency-versions y https://dl.google.com/android/repository/repository2-3.xml.

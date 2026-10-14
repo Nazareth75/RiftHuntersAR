@@ -1,37 +1,49 @@
 # INTEGRATION NOTES
 
-## Base y límites
-Proyecto existente en juegoHunter/RiftHuntersAR; Unity 6000.3.16f1. No mover el proyecto, cambiar Unity, eliminar Library ni recrear assets. Alcance de esta entrega: Fase 1; sin gameplay ni arte final.
+Actualizado: 2026-10-13. Unity 6000.3.16f1. Rama art-integration. Sin remoto.
 
-## Git
-Repositorio local creado dentro de la raíz real del proyecto. Commit base: chore: initialize Rift Hunters AR Unity project. Rama de trabajo: art-integration. Sin remoto y sin push. .gitignore excluye cachés, builds, IDE y claves de firma; conserva Assets, Packages, ProjectSettings y .meta.
-No usar reset --hard, clean -fd o push --force. No cambiar credenciales ni configuración global.
-Antes de conectar el repositorio del grupo: inspeccionar ramas, historial, estructura, ProjectVersion, Packages y ProjectSettings; explicar la estrategia al usuario antes de integrar. No asumir que el historial local es el del grupo.
+## Integración con equipo
+Antes de añadir el repositorio del grupo inspeccionar ramas/historial, versión Unity, estructura, Packages y ProjectSettings y explicar estrategia al usuario. Conservar GUID/meta. No mover proyecto ni apropiarse de escenas de compañeros. No reset --hard, clean -fd, push --force ni push.
+ARGame es escena nueva; SampleScene queda conservada. Revisar cambios de Graphics/Quality y Mobile_Renderer al integrar porque son compartidos: ahora seleccionan la pipeline móvil y el fondo AR.
 
-## Responsabilidades propuestas
-- Persona 1: Scripts/AR y colocación.
-- Persona 2: Scripts/Combat y Scripts/Enemies.
-- Persona 3: Scripts/Game y Scripts/UI.
-- Persona 4: Scripts/Integration, Art, Effects, prefabs y pruebas de integración.
-Estas carpetas no implican apropiación de archivos de compañeros. Coordinar nombres y contratos antes de integrar.
+## Responsabilidades sugeridas
+AR: PortalSpawnPoint y colocación actualmente coordinada por ARPrototypeController.
+Combate: PlasmaWeapon y EnemyHealth.
+Game/UI: ScoreManager y HUD temporal; el coordinador se podrá separar cuando el equipo integre sus sistemas.
+Integración: PrototypeBuilder, prefabs y materiales placeholder.
+No se añadieron sistemas avanzados: validar MVP en Android antes de movimiento/oleadas/armas/boss.
 
-## Contratos mínimos previstos para Fase 2
-Aún no implementados: placement comunica la pose colocada; portal expone SpawnPoint; EnemyHealth recibe daño y emite muerte una sola vez; EnemyMovement recibe referencia explícita del objetivo; PlasmaShooter usa raycast central de cámara y botón UI; puntuación escucha muerte sin depender del modelo visual.
-Usar namespace RiftHuntersAR. Evitar dependencias circulares y búsquedas globales repetidas. Input System ya activo: no asumir UnityEngine.Input legado.
-Un arma, un enemigo, una prueba técnica. No boss, otras armas, tienda o sistemas adicionales todavía.
+## Contratos actuales
+EnemyHealth.TakeDamage(float), EnemyHealth.Die(), evento Died(EnemyHealth) emitido una sola vez.
+ScoreManager.AddEnemyScore() y Changed(int). Sin singleton ni guardado.
+PortalSpawnPoint.SpawnPoint: Transform serializado, independiente de Visual.
+PlasmaWeapon.Shoot(), Ready y Feedback(string); cámara explícita. GetComponentInParent<EnemyHealth> permite collider técnico hijo.
+ARPrototypeController excluye toques UI usando EventSystem.RaycastAll (evita el estado retrasado de IsPointerOverGameObject en Input System).
+Un portal bajo un ARAnchor creado por ARAnchorManager.AttachAnchor, un enemigo, spawn diferido; la lógica no depende del nombre de la cápsula o del cilindro.
 
-## Assets y escenas
-Conservar todos los .meta y GUID. Mover assets futuros desde Unity para preservar referencias. Carpetas vacías versionadas mediante sus .meta; Unity las reconoce al importar.
-No modificar SampleScene ni escenas de compañeros para la prueba. Crear escena específica bajo Assets/Scenes/Tests en Fase 2.
-Mantener el modelo visual como hijo intercambiable del prefab; colliders y lógica en raíz o hijos técnicos documentados. PENDIENTE DE DISEÑO en todo recurso provisional.
-Las fuentes .ase/.aseprite posteriores son UI; exportaciones PNG para integrar. Enemigos principales 3D.
+## Sustitución de arte
+PENDIENTE DE DISEÑO: portal, enemigo, armas, mira, botón y HUD.
+Reemplazar hijos Visual manteniendo raíz y componentes técnicos. Ajustar collider/AimPoint/SpawnPoint a escala en metros del asset nuevo. Enemy placeholder mide aproximadamente 0.6 m y portal 0.5 m de diámetro.
+El collider no vive en el modelo; materiales Unlit temporales. UI Text/Images estándar uGUI, sustituible por prefabs artísticos conservando referencias del controlador.
 
-## Paquetes y ajustes compartidos
-AR Foundation 6.3 y ARCore 6.3 compatibles según documentación oficial; candidatos 6.3.5/6.3.5. No instalados en esta entrega. Confirmar resolución real en Package Manager y versionar manifest junto con packages-lock.
-XR Plug-in Management, habilitación Android, validación y renderer URP AR pendientes. No editar YAML de ajustes mientras el Editor pueda sobrescribirlo; preferir configuración desde Unity.
-Usar IL2CPP/ARM64 ya configurados. Comprobar SDK mínimo mediante Project Validation. Revisar permiso de cámara, soporte del dispositivo y retorno de suspensión.
+## Configuración
+AR Foundation/ARCore 6.3.5, XR Management 4.5.4, Core Utils 2.6.0. Versionar manifest y lock juntos. Dependencias oficiales transitivas conservadas, sin OpenXR.
+ARCore Android requerido, profundidad opcional. IL2CPP/ARM64, GLES3, API25, portrait, com.rifthunters.ar.
+ARBackgroundRendererFeature en Mobile_Renderer y pipeline Mobile_RPAsset en Graphics/Quality.
+XRGeneralSettings Android inicializa el loader al iniciar. La cámara usa TrackedPoseDriver del Input System, no ARSessionOrigin obsoleto.
 
-## Validación para integrar
-Actualizar PROJECT_STATUS después de cada bloque. Registrar escena, controles, errores de Console, compilación y prueba real Android por separado. La inspección de archivos no demuestra ejecución ni tracking AR.
-Unity permanece abierto: esperar importación automática o Assets > Refresh. No ejecutar un segundo Editor batch sobre la misma carpeta abierta.
-Evitar luces, partículas y texturas pesadas; pooling solo cuando el flujo funcional lo justifique.
+## Herramienta del Editor
+Menú Rift Hunters: Create AR Prototype, Test Four Hits And Score, Build Android Prototype.
+Create rehúsa sobrescribir ARGame y rehúsa continuar con escenas abiertas sucias. No ejecutarlo sobre escenas de compañeros.
+Para automatización local, el Editor consume comandos create/test/android/build desde Temp/RiftPrototypeCommand.txt y escribe Temp/RiftPrototypeResult.txt. Temp ignorado; no incluir comandos en commits. La vigilancia no corre durante Play Mode, importación o compilación.
+Build produce APK Development ARM64 en Builds/Android; no firmar con credenciales privadas en esta fase.
+No lanzar un segundo Editor para generar assets sobre un proyecto abierto; la herramienta se ejecuta dentro del Editor existente.
+
+## Verificación
+Smoke test de cuatro impactos y score 100 pasó en Editor, incluida protección contra doble muerte. No prueba AR físico.
+ADB no detectó teléfono. La estabilidad del MVP no está certificada aún: probar tracking, placement, cuatro impactos, score, pausa/reanudación y permiso de cámara.
+Registrar resultado del build y pruebas reales en PROJECT_STATUS. No confundir compilación con tracking AR.
+
+## SDK local y artefactos de build
+Builds/Toolchain/AndroidSDK contiene una copia local de herramientas: Command-line Tools 16, build-tools/platform-tools 36.0.0, plataforma Android 36 y CMake 3.22.1. NDK y JDK siguen siendo los de Unity. No versionar SDK/ZIP/APK; se reconstruyen fuera de Git. El SDK original de Unity está incompleto y su restauración vía API valida y rechaza esa ruta: revisar External Tools si se trabaja en otro proyecto.
+Ignorar Resources/PerformanceTestRun*.json y preferencias temporales XR, generadas automáticamente por paquetes durante builds. Mantener ajustes y loaders ARCore versionados.
