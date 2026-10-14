@@ -10,7 +10,7 @@ Las rutas de ARCHIVOS son absolutas. Para elementos no implementados se cita el 
 
 ## Git y conservación
 
-Origin fetch/push verificado exactamente https://github.com/Nazareth75/RiftHuntersAR.git. Fetch exitoso: origin/main y origin/ar-system; origin/art-integration no existía. Primer push falló porque Git Credential Manager no pudo ejecutarse (MSYS NtCreateDirectoryObject 0xC0000022); consulta directa no encontró credencial utilizable sin inicio interactivo. No se hizo push exitoso, merge, reset, force ni modificación de ar-system/main. Autenticación/push pendiente en terminal normal del usuario. Destino autorizado: origin/art-integration únicamente.
+Origin fetch/push verificado exactamente https://github.com/Nazareth75/RiftHuntersAR.git. Fetch exitoso: origin/main y origin/ar-system; origin/art-integration no existía. El primer push de terminal falló por acceso de la sandbox al gestor de credenciales de Windows. El push desde Git GUI instalado terminó con Success y creó art-integration; verificación independiente ls-remote devolvió 2784741e0bf2aae88e986b33b243c6617738dab4 para refs/heads/art-integration. No hubo login automatizado ni acceso/revelación de tokens. Este informe actualizado se respalda posteriormente en la misma rama. No se hizo merge, reset, force ni push a ar-system/main. URL: https://github.com/Nazareth75/RiftHuntersAR/tree/art-integration.
 
 Cambios locales excluidos: ProjectSettings/UnityConnectSettings.asset activa m_Enabled de 0 a 1 (Unity Services; no requisito para AR local ni credencial privada literal, pero configuración opcional ajena al alcance; dejar sin commit). ProjectSettings/ProjectSettings.asset solo reordena las mismas referencias preloadedAssets; también se preserva sin incluir. No revertirlos.
 
@@ -813,4 +813,3 @@ Persona 1 continúa AR; Persona 2 combate/enemigos; Persona 3 GameManager/oleada
 - [Unity — Model formats](https://docs.unity.com/en-us/engine/6000.0/manual/assets-and-media/asset-types/models/creating-dccassets/3d-formats): FBX/OBJ y fuentes DCC.
 - [LibreSprite — repositorio oficial](https://github.com/LibreSprite/LibreSprite): editor de sprites/animación 2D.
 - [Unity — Particle effects](https://docs.unity.com/en-us/engine/6000.6/manual/visual-effects/particle-systems): sistemas de partículas. Versión de documentación distinta; disponibilidad aquí comprobada localmente en manifest.
-
