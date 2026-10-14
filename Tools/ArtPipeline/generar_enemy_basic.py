@@ -21,8 +21,7 @@ scene=bpy.context.scene
 scene.unit_settings.system="METRIC"
 scene.unit_settings.scale_length=1.0
 bpy.context.preferences.filepaths.save_version=0
-if hasattr(bpy.context.preferences.filepaths,"use_save_preview"):
-    bpy.context.preferences.filepaths.use_save_preview=False
+bpy.context.preferences.filepaths.file_preview_type="NONE"
 
 def material(name,color,metallic=0,rough=.4,emission=0):
     m=bpy.data.materials.new(name); m.diffuse_color=(*color,1); m.use_nodes=True
@@ -244,7 +243,7 @@ views={
 # Save source with useful first camera, then export only model hierarchy.
 camera.location=views["Perspectiva"][0]
 camera.rotation_euler=(Vector(views["Perspectiva"][1])-camera.location).to_track_quat("-Z","Y").to_euler()
-bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE/"EnemyBasic_Final.blend"))
+bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE/"EnemyBasic_Final.blend"),compress=True)
 bpy.ops.object.select_all(action="DESELECT");model.select_set(True)
 for ob in list(groups.values())+parts:ob.select_set(True)
 bpy.context.view_layer.objects.active=model
