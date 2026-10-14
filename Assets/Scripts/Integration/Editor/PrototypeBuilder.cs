@@ -260,8 +260,13 @@ namespace RiftHuntersAR.Integration.Editor
             string bundledSdk=Path.Combine(EditorApplication.applicationContentsPath,"PlaybackEngines/AndroidPlayer/SDK");
             string localSdk=Path.GetFullPath("Builds/Toolchain/AndroidSDK");
             BuildReport report;
+            bool outputCopyFailed = false;
             Directory.CreateDirectory("Logs");
-            Application.LogCallback log = (message, stack, type) => File.AppendAllText("Logs/RiftBuild.log", type + ": " + message + Environment.NewLine + stack + Environment.NewLine);
+            Application.LogCallback log = (message, stack, type) =>
+            {
+                if (message.Contains("DirectoryNotFoundException") && message.Contains("launcher-debug.apk")) outputCopyFailed = true;
+                File.AppendAllText("Logs/RiftBuild.log", type + ": " + message + Environment.NewLine + stack + Environment.NewLine);
+            };
             Application.logMessageReceived += log;
             try
             {
@@ -272,6 +277,29 @@ namespace RiftHuntersAR.Integration.Editor
             {
                 Application.logMessageReceived -= log;
                 AndroidExternalToolsSettings.sdkRootPath=string.Equals(previousSdk,bundledSdk,StringComparison.OrdinalIgnoreCase) ? string.Empty : previousSdk;
+            }
+            string generatedGradle = "Library/Bee/Android/Prj/IL2CPP/Gradle";
+            string shortApk = "Builds/g/launcher/outputs/apk/debug/launcher-debug.apk";
+            bool shortPaths = File.Exists(generatedGradle + "/build.gradle") && File.ReadAllText(generatedGradle + "/build.gradle").Contains("// Rift short build paths");
+            bool repaired = false;
+            if (shortPaths && File.Exists(shortApk) && (report.summary.result == BuildResult.Succeeded || (outputCopyFailed && report.summary.totalErrors == 1)))
+            {
+                using (var archive = System.IO.Compression.ZipFile.OpenRead(shortApk))
+                {
+                    if (archive.GetEntry("AndroidManifest.xml") == null || archive.GetEntry("lib/arm64-v8a/libil2cpp.so") == null)
+                        throw new Exception("Short-path output is not the expected ARM64 APK");
+                }
+                string expected = generatedGradle + "/launcher/build/outputs/apk/debug/launcher-debug.apk";
+                Directory.CreateDirectory(Path.GetDirectoryName(expected));
+                File.Copy(shortApk, expected, true);
+                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Prototype.apk", true);
+                repaired = outputCopyFailed;
+            }
+            if (repaired)
+            {
+                File.WriteAllText("Temp/RiftBuildReport.txt", "Succeeded: Gradle packaging complete; Unity output copy repaired. Original Unity report: " + report.summary.result);
+                Debug.Log("[Rift] Repaired final APK copy from short Gradle output.");
+                return;
             }
             File.WriteAllText("Temp/RiftBuildReport.txt",report.summary.result+"\nErrors: "+report.summary.totalErrors+"\nWarnings: "+report.summary.totalWarnings);
             if(report.summary.result!=BuildResult.Succeeded) throw new Exception("Android build failed; inspect Editor.log and build report");

@@ -47,3 +47,11 @@ Registrar resultado del build y pruebas reales en PROJECT_STATUS. No confundir c
 ## SDK local y artefactos de build
 Builds/Toolchain/AndroidSDK contiene una copia local de herramientas: Command-line Tools 16, build-tools/platform-tools 36.0.0, plataforma Android 36 y CMake 3.22.1. NDK y JDK siguen siendo los de Unity. No versionar SDK/ZIP/APK; se reconstruyen fuera de Git. El SDK original de Unity está incompleto y su restauración vía API valida y rechaza esa ruta: revisar External Tools si se trabaja en otro proyecto.
 Ignorar Resources/PerformanceTestRun*.json y preferencias temporales XR, generadas automáticamente por paquetes durante builds. Mantener ajustes y loaders ARCore versionados.
+
+## APK y empaquetado verificado
+APK de desarrollo generado y firmado: Builds/Android/RiftHuntersAR_Prototype.apk (49,016,124 bytes), ARM64, com.rifthunters.ar, min25/target36. No validado físicamente.
+Salidas Gradle se acortaron a Builds/g para evitar rutas mayores a 260 caracteres. PrototypeBuilder detecta ese modo y copia el APK actual tanto a la salida esperada de Unity como al destino final, validando la estructura ARM64. Si Unity informa solamente el fallo de copia de salida, la herramienta repara esa copia; no oculta errores de compilación o de Gradle.
+Tools/BuildAndroidPrototype.ps1 es auxiliar de empaquetado de datos generados previamente por Unity. Usa caché estándar de Gradle y una copia de la clave debug existente, sin contraseñas privadas ni claves de producción guardadas. El agente encontró una caída de AAPT2 en su terminal; el Gradle dentro de Unity sí produjo un APK válido. Las modificaciones generadas bajo Library/Builds se ignoran y pueden necesitar reaplicarse tras regeneración; no mover el proyecto para corregir rutas.
+No añadir características avanzadas hasta validar tracking, ancla, cuatro impactos y score en Android real.
+
+Build final confirmado en Unity: Succeeded, 0 errores, 1 advertencia. La prueba de salud/score se repitió con el Editor normal y pasó. Conservar el cambio preexistente no relacionado en UnityConnectSettings sin incluirlo en el commit técnico.

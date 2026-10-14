@@ -1,6 +1,6 @@
 # RIFT HUNTERS AR - PROJECT STATUS
 
-Actualizado: 2026-10-13. MVP técnico creado; build Android en curso, validación física pendiente.
+Actualizado: 2026-10-13. MVP técnico creado y APK de desarrollo generado/verificado. Validación física AR pendiente.
 
 ## Proyecto y Git
 Raíz: C:\Users\HP\Desktop\tareas para subir hoy\program multimedia\juegoHunter\RiftHuntersAR
@@ -49,7 +49,7 @@ Todo es PENDIENTE DE DISEÑO; ningún recurso artístico final creado. Cambiar V
 - ARCore loader asignado a Android, Initialize XR on Startup habilitado.
 - ARCore requerido y Depth opcional: no usamos Depth.
 - Mobile URP pipeline en Graphics/Quality y ARBackgroundRendererFeature en Mobile_Renderer.
-- Cámara/permisos: verificar manifest del APK generado; ARCore administra el acceso, autorización física aún pendiente.
+- Cámara/permisos: manifest del APK verificado: CAMERA, android.hardware.camera.ar requerido y com.google.ar.core=required. ARCore administra el acceso; autorización física aún pendiente.
 - Objetivo 30 FPS, geometría simple, materiales Unlit, sin luces ni partículas del juego.
 
 ## Flujo implementado
@@ -66,7 +66,10 @@ No hay movimiento, vida del jugador, oleadas, otras armas ni boss: requieren est
 - Arranque de ARGame en Play Mode: UI visible y cero errores rojos; seis advertencias por ausencia de proveedor AR de Editor. No es una prueba de tracking.
 - El primer build falló por ausencia de SDK cmdline-tools/latest. SDK local preparado bajo Builds/Toolchain/AndroidSDK, con plataformas/build-tools/platform-tools/CMake existentes copiados y Command-line Tools 16 oficial descargado.
 - ZIP 16 verificado contra SHA1 32787c10f55911fd109848906b1275723e79f659 del repositorio oficial Google. sdkmanager ejecutado con JDK17 devuelve 16.0.
-- Reintento posterior encontró CMake 3.22.1 faltante en la copia local; se copió la versión existente del SDK de Unity. Nuevo build en curso, resultado/APK pendientes.
+- CMake 3.22.1 copiado desde Unity. IL2CPP ARM64, Java, recursos, empaquetado y firma generados con Unity Editor.
+- Salidas largas de Gradle redirigidas a Builds/g. Unity no encontraba el APK en su ruta habitual; copia final reparada y soporte añadido en PrototypeBuilder.
+- Verificado con apksigner: firma v2 válida, un firmante. aapt2 dump badging confirma com.rifthunters.ar, 0.1.0, minSdk25, targetSdk36, ARM64 y debuggable.
+- APK: Builds/Android/RiftHuntersAR_Prototype.apk, 49,016,124 bytes. SHA256: 2527BFD5E1D4838F90DF9F905AD462B428100D63D2D65951F1226CE6C918B3E7.
 
 ## Cómo probar en teléfono
 1. Dispositivo Android compatible con ARCore; conectar y habilitar depuración USB, aceptar autorización en el teléfono.
@@ -86,3 +89,12 @@ No se modificó configuración global de Git. Builds, cachés y logs ignorados.
 ## Herramientas Android locales
 El SDK original instalado en Unity carece de cmdline-tools moderno. El prototipo usa Builds/Toolchain/AndroidSDK (ignorado por Git), sin modificar Program Files. Unity selecciona este SDK para el build. Restaurar el SDK original mediante la API pública falló porque valida la ruta incompleta; la preferencia External Tools puede quedar apuntando al SDK local. Revisar esta preferencia antes de compilar otro proyecto y reparar el módulo SDK de Unity cuando sea conveniente. No se aceptaron licencias nuevas ni se usaron credenciales administrativas.
 Fuentes: https://docs.unity.com/en-us/engine/6000.3/manual/platform-specific/android/getting-started/sdksetup/supported-dependency-versions y https://dl.google.com/android/repository/repository2-3.xml.
+
+## Resultado y límites de las herramientas
+El APK se empaquetó con el Gradle ejecutado por Unity Editor. AAPT2 dentro del proceso de terminal del agente sufre 0xC0000005 incluso con un manifest mínimo; no usar ese fallo como prueba de un error en gameplay. La verificación final en batch del agente también quedó limitada por acceso WMI/registro. El Editor normal compiló la herramienta actualizada; se reabrió el proyecto para repetir el smoke test.
+Tools/BuildAndroidPrototype.ps1 documenta y automatiza el empaquetado del proyecto ya generado: caché Gradle estándar corta, clave debug existente copiada localmente, AAPT del SDK y salidas cortas. Sintaxis validada; empaquetado desde la terminal del agente sigue limitado por AAPT2. Regenerar datos en Unity si cambia gameplay; no empaquetar datos antiguos.
+Se conserva sin incorporar un cambio previo del Editor en ProjectSettings/UnityConnectSettings.asset; no se revierten ni se asumen cambios de usuario.
+No hay APK Playtest avanzado: movimiento, oleadas, armas adicionales y boss esperan la validación del MVP en dispositivo.
+
+## Comprobación final
+Unity Editor volvió a ejecutar el smoke test: SUCCESS: test (20:49, hora Bolivia). Build final de la herramienta actualizada: SUCCESS: build; resultado Unity Succeeded, 0 errores, 1 advertencia (símbolos de diagnóstico). APK final nuevamente verificado: firma v2 válida, manifest/ARM64 correctos. ADB devices sigue vacío: no se instaló en teléfono ni se afirmó tracking real. La copia descargable es idéntica al APK final.

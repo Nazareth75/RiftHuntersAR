@@ -29,3 +29,6 @@ Thumbs.db
 /Assets/XR/Temp.meta
 /Assets/XR/UserSimulationSettings/
 /Assets/XR/UserSimulationSettings.meta
+
+/.utmp/
+/Assets/XR/Resources/XRSimulationRuntimeSettings.asset*
