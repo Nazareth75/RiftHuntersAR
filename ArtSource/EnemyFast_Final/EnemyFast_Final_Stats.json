@@ -1,0 +1,33 @@
+{
+  "asset": "EnemyFast_Final",
+  "triangles": 1506,
+  "vertices": 902,
+  "materials": [
+    "EnemyEnergy",
+    "MetalDark",
+    "MetalLight"
+  ],
+  "parts": [
+    "Body",
+    "Head",
+    "Armor",
+    "Core",
+    "Leg_FL",
+    "Leg_BL",
+    "Leg_FR",
+    "Leg_BR"
+  ],
+  "dimensions_xyz_m": [
+    0.3928069472312927,
+    0.7800666093826294,
+    0.5199999809265137
+  ],
+  "height_m": 0.52,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}

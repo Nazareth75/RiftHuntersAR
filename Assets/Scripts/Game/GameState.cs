@@ -1,8 +1,5 @@
-﻿namespace RiftHunters.Game
+namespace RiftHunters.Game
 {
-    // Estados de una partida.
-    // Waiting -> Countdown -> Wave1 -> Wave2 -> Wave3 -> Boss -> Victory.
-    // Con 0 vidas se pasa a GameOver y se corta el spawn.
     public enum GameState
     {
         Waiting,
@@ -10,18 +7,17 @@
         Wave1,
         Wave2,
         Wave3,
+        Wave4,
         Boss,
         Victory,
         GameOver
     }
 
-    // Tipos que spawnea WaveManager.
-    // Si el prefab de ese tipo está vacío, sale un PlaceholderEnemy.
-    public enum EnemyKind
+    public enum TipoEnemigo
     {
         Normal,
-        Fast,
-        Tank,
-        Boss
+        Rapido,
+        Tanque,
+        Jefe
     }
 }

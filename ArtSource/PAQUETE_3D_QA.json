@@ -1,0 +1,132 @@
+[
+  {
+    "asset": "EnemyBasic_Final",
+    "triangles": 2000,
+    "meshes": 8,
+    "materials": [
+      "EnemyEnergy",
+      "MetalDark",
+      "MetalLight"
+    ],
+    "dimensions_xyz_m": [
+      0.9074710309505463,
+      1.1097427606582642,
+      0.6000001728676665
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "EnemyFast_Final",
+    "triangles": 1506,
+    "meshes": 8,
+    "materials": [
+      "EnemyEnergy",
+      "MetalDark",
+      "MetalLight"
+    ],
+    "dimensions_xyz_m": [
+      0.3928069472312927,
+      0.7800666391849518,
+      0.5200001025040564
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "EnemyTank_Final",
+    "triangles": 2600,
+    "meshes": 8,
+    "materials": [
+      "EnemyEnergy",
+      "MetalDark",
+      "MetalLight"
+    ],
+    "dimensions_xyz_m": [
+      1.1775323748588562,
+      1.0067060589790344,
+      0.9500001282606547
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "RiftGuardian_Final",
+    "triangles": 5050,
+    "meshes": 30,
+    "materials": [
+      "EnemyEnergy",
+      "MetalDark",
+      "MetalLight"
+    ],
+    "dimensions_xyz_m": [
+      1.7467501163482666,
+      0.7001381516456604,
+      1.850000062004387
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "Portal_Final",
+    "triangles": 1980,
+    "meshes": 16,
+    "materials": [
+      "PlayerEnergy",
+      "RiftEnergy",
+      "TechMetalDark",
+      "TechMetalLight"
+    ],
+    "dimensions_xyz_m": [
+      1.2430785298347473,
+      0.16706342995166779,
+      1.2500000024193332
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "PlasmaBlaster_Final",
+    "triangles": 918,
+    "meshes": 5,
+    "materials": [
+      "PlayerEnergy",
+      "TechMetalDark",
+      "TechMetalLight"
+    ],
+    "dimensions_xyz_m": [
+      0.21446102857589722,
+      0.5459171682596207,
+      0.3000000344845457
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "ElectricCannon_Final",
+    "triangles": 1880,
+    "meshes": 6,
+    "materials": [
+      "PlayerEnergy",
+      "TechMetalDark",
+      "TechMetalLight"
+    ],
+    "dimensions_xyz_m": [
+      0.28203459084033966,
+      0.758160263299942,
+      0.36000004641219974
+    ],
+    "checks": "PASS"
+  },
+  {
+    "asset": "EnergyLauncher_Final",
+    "triangles": 1180,
+    "meshes": 7,
+    "materials": [
+      "EnemyEnergy",
+      "PlayerEnergy",
+      "TechMetalDark",
+      "TechMetalLight"
+    ],
+    "dimensions_xyz_m": [
+      0.392875999212265,
+      0.7213208079338074,
+      0.4200000472813912
+    ],
+    "checks": "PASS"
+  }
+]

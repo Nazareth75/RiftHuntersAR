@@ -1,0 +1,1 @@
+PASS: actual prefab 100 HP, scene 25 damage, one collider, zero persistent listeners; physics raycast four hits 75/50/25/0; duplicate frame/cooldown rejected; ammo zero/reload; player death and retry; horizontal movement clamp, tracking pause and attack cooldown.

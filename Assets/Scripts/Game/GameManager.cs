@@ -1,50 +1,52 @@
-﻿using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine;
 
 namespace RiftHunters.Game
 {
-    // Dueño de la partida: estado, reloj, vivos y avisos al HUD.
     public class GameManager : MonoBehaviour
     {
         public static GameManager Instance { get; private set; }
 
         [SerializeField] float countdownSeconds = 3f;
+        [SerializeField] int danoPorUnidad = 34;
 
-        [SerializeField] ScoreManager scoreManager;
-        [SerializeField] PlayerLives playerLives;
-        [SerializeField] WaveManager waveManager;
+        // EnlaceCombateAR ya suma puntos y aplica el daño. Estas dos quedan apagadas para no contar doble.
+        [SerializeField] bool aplicarPuntosEnPartida = false;
+        [SerializeField] bool aplicarDanoEnPartida = false;
+
+        readonly Queue<GrupoOleada> pendientes = new Queue<GrupoOleada>();
+
+        IPuntuacion puntuacion;
+        IVidaJugador vida;
+        IGeneradorOleada generador;
 
         float matchTime;
         float countdownLeft;
-        int alive;
-        bool portalPlaced;
-        bool resetting;
-        bool suppressHookDeath;
-        bool advancing;
-
-        string weaponLine = "—";
-        float bossCurrent;
-        float bossMax;
+        bool cerrando;
+        bool enAviso;
+        bool invasion;
 
         public GameState State { get; private set; } = GameState.Waiting;
-        public WaveManager Waves => waveManager;
-        public bool PortalWasPlaced => portalPlaced;
         public float MatchSeconds => matchTime;
         public float CountdownLeft => countdownLeft;
-        public string WeaponLine => weaponLine;
-        public float BossCurrent => bossCurrent;
-        public float BossMax => bossMax;
+        public string TextoCuenta { get; private set; } = "";
+        public int Puntos => puntuacion != null ? puntuacion.Score : 0;
+        public float VidaActual => vida != null ? vida.CurrentHealth : 0f;
+        public bool EsJefe => State == GameState.Boss;
 
-        public int Score => scoreManager != null ? scoreManager.Score : 0;
-        public int Lives => playerLives != null ? playerLives.Current : 0;
-        public bool PlayerIsInvulnerable => playerLives != null && playerLives.IsInvulnerable;
+        public int NumeroOleada
+        {
+            get
+            {
+                if (State == GameState.Wave1) return 1;
+                if (State == GameState.Wave2) return 2;
+                if (State == GameState.Wave3) return 3;
+                if (State == GameState.Wave4) return 4;
+                return 0;
+            }
+        }
 
-        // Countdown y oleadas. En Waiting, Victory y GameOver los hooks de combate no cuentan.
-        public bool IsRunning =>
-            State == GameState.Countdown ||
-            State == GameState.Wave1 ||
-            State == GameState.Wave2 ||
-            State == GameState.Wave3 ||
-            State == GameState.Boss;
+        public bool IsRunning => State == GameState.Countdown || EsOleada(State);
 
         void Awake()
         {
@@ -55,242 +57,187 @@ namespace RiftHunters.Game
             }
 
             Instance = this;
+            if (countdownSeconds < 0.5f) countdownSeconds = 3f;
+            if (danoPorUnidad < 1) danoPorUnidad = 34;
+            ResolverFuentes();
+        }
 
-            if (scoreManager == null)
-                scoreManager = GetComponent<ScoreManager>();
-            if (playerLives == null)
-                playerLives = GetComponent<PlayerLives>();
-            if (waveManager == null)
-                waveManager = GetComponent<WaveManager>();
+        void OnEnable()
+        {
+            if (vida != null) vida.Died += AlMorirJugador;
+            if (generador != null) generador.EnemigosAgotados += AlAgotarseEnemigos;
+        }
 
-            if (countdownSeconds < 0.5f)
-                countdownSeconds = 3f;
+        void OnDisable()
+        {
+            if (vida != null) vida.Died -= AlMorirJugador;
+            if (generador != null) generador.EnemigosAgotados -= AlAgotarseEnemigos;
         }
 
         void OnDestroy()
         {
-            if (Instance == this)
-                Instance = null;
+            if (Instance == this) Instance = null;
         }
 
         void Update()
         {
-            if (IsRunning)
-                matchTime += Time.deltaTime;
+            if (IsRunning) matchTime += Time.deltaTime;
+            if (EsOleada(State)) PedirSiguienteGrupo();
+            if (State != GameState.Countdown) return;
 
-            if (State == GameState.Countdown)
+            countdownLeft -= Time.deltaTime;
+            if (!invasion)
             {
-                countdownLeft -= Time.deltaTime;
+                int segundos = Mathf.CeilToInt(countdownLeft);
+                if (segundos > 3) segundos = 3;
+                if (segundos < 1) segundos = 1;
+                TextoCuenta = segundos.ToString();
                 if (countdownLeft <= 0f)
-                    ChangeState(GameState.Wave1);
+                {
+                    invasion = true;
+                    countdownLeft = 1f;
+                    TextoCuenta = "¡INVASIÓN!";
+                }
+                return;
             }
 
-            if (waveManager != null)
-                waveManager.Tick(Time.deltaTime);
+            TextoCuenta = "¡INVASIÓN!";
+            if (countdownLeft <= 0f) CambiarEstado(GameState.Wave1);
         }
 
-        public void SetSpawnPoint(Transform portal)
+        public void IniciarPartida()
         {
-            if (waveManager != null)
-                waveManager.SetSpawnPoint(portal);
-        }
+            if (State == GameState.Countdown || EsOleada(State)) return;
+            if (State != GameState.Waiting) VolverAlMenu();
 
-        public void SetPlayerTarget(Transform cameraOrPlayer)
-        {
-            if (waveManager != null)
-                waveManager.SetPlayerTarget(cameraOrPlayer);
-        }
-
-        // Se guarda, pero la prueba puede empezar sin portal.
-        public void PortalPlaced()
-        {
-            portalPlaced = true;
-        }
-
-        public void StartMatch()
-        {
-            if (State == GameState.Countdown || IsWave(State))
-                return;
-
-            if (State != GameState.Waiting)
-                ReturnToWaiting();
-
-            if (scoreManager != null)
-                scoreManager.ResetScore();
-            if (playerLives != null)
-                playerLives.ResetLives();
+            ResolverFuentes();
+            if (puntuacion != null) puntuacion.ResetScore();
+            if (vida != null) vida.Retry();
 
             matchTime = 0f;
-            weaponLine = "—";
-            bossCurrent = 0f;
-            bossMax = 0f;
-            alive = 0;
-            suppressHookDeath = false;
+            invasion = false;
             countdownLeft = countdownSeconds;
-            ChangeState(GameState.Countdown);
+            TextoCuenta = "3";
+            GameplayHooks.SolicitarReiniciarArmas();
+            CambiarEstado(GameState.Countdown);
         }
 
-        // MENÚ: vuelve al título sin recargar la escena.
-        public void ReturnToWaiting()
+        public void VolverAlMenu()
         {
-            resetting = true;
-            if (waveManager != null)
-                waveManager.ClearBattlefield();
-            resetting = false;
-
-            alive = 0;
-            suppressHookDeath = false;
+            cerrando = true;
+            CambiarEstado(GameState.Waiting);
             matchTime = 0f;
             countdownLeft = 0f;
-            weaponLine = "—";
-            bossCurrent = 0f;
-            bossMax = 0f;
-
-            if (scoreManager != null)
-                scoreManager.ResetScore();
-            if (playerLives != null)
-                playerLives.ResetLives();
-
-            State = GameState.Waiting;
+            invasion = false;
+            TextoCuenta = "";
+            if (puntuacion != null) puntuacion.ResetScore();
+            if (vida != null) vida.Retry();
+            cerrando = false;
         }
 
-        // REINTENTAR: limpia y arranca otra cuenta atrás.
-        public void Retry()
+        public void Reintentar()
         {
-            ReturnToWaiting();
-            StartMatch();
+            VolverAlMenu();
+            IniciarPartida();
         }
 
-        public void EnterGameOver()
+        public void Murio(int puntos)
         {
-            if (State == GameState.GameOver || State == GameState.Victory)
-                return;
-
-            ChangeState(GameState.GameOver);
+            if (!IsRunning || !aplicarPuntosEnPartida || puntuacion == null) return;
+            puntuacion.AgregarPuntos(puntos);
         }
 
-        public void PlayerDamaged(int amount)
+        public void AtacoJugador(int unidades)
         {
-            if (!IsRunning)
-                return;
-
-            if (playerLives != null)
-                playerLives.Damage(amount);
+            if (!IsRunning || !aplicarDanoEnPartida || unidades <= 0 || vida == null) return;
+            vida.TakeDamage(unidades * danoPorUnidad);
         }
 
-        public void EnemyDefeated(int score)
+        public void EnemigosAgotados() => AlAgotarseEnemigos();
+
+        void ResolverFuentes()
         {
-            // Si el placeholder ya avisó la muerte, no restamos otra vez.
-            bool alreadyCounted = suppressHookDeath;
-            suppressHookDeath = false;
-
-            if (!IsRunning)
-                return;
-
-            if (scoreManager != null)
-                scoreManager.Add(score);
-
-            if (!alreadyCounted && alive > 0)
-                alive--;
-
-            TryAdvance();
+            if (puntuacion == null) puntuacion = GetComponent<IPuntuacion>();
+            if (vida == null) vida = GetComponent<IVidaJugador>();
+            if (generador == null) generador = GetComponent<IGeneradorOleada>();
         }
 
-        public void ReportBossHealth(float current, float max)
+        void CambiarEstado(GameState siguiente)
         {
-            if (State == GameState.Waiting)
-                return;
+            State = siguiente;
+            bool oleada = EsOleada(siguiente);
+            bool fin = siguiente == GameState.Victory || siguiente == GameState.GameOver;
+            if (!oleada) pendientes.Clear();
+            if (!oleada && siguiente != GameState.Countdown) TextoCuenta = "";
 
-            bossCurrent = current;
-            bossMax = max;
-        }
-
-        public void ReportAmmo(string weaponName, int current, int max)
-        {
-            if (!IsRunning)
-                return;
-
-            if (string.IsNullOrEmpty(weaponName))
-                weaponName = "ARMA";
-
-            weaponLine = weaponName + " " + current + "/" + max;
-        }
-
-        public void RegisterSpawn()
-        {
-            if (resetting)
-                return;
-
-            alive++;
-        }
-
-        public void RegisterDeath(bool willReportScore)
-        {
-            if (resetting)
-                return;
-
-            if (alive > 0)
-                alive--;
-
-            // El hook de puntos llega enseguida y es quien pasa de oleada,
-            // para que el puntaje entre antes del cambio de estado.
-            if (willReportScore)
+            if (generador != null)
             {
-                suppressHookDeath = true;
+                if (fin || siguiente == GameState.Waiting) generador.Limpiar();
+                generador.Pausar(!oleada);
+            }
+
+            GameplayHooks.SolicitarPausa(!oleada);
+            if (fin) GameplayHooks.SolicitarDetenerCombate();
+            if (oleada) ComenzarOleada(siguiente);
+        }
+
+        void ComenzarOleada(GameState oleada)
+        {
+            pendientes.Clear();
+            GrupoOleada[] grupos = PlanOleadas.De(oleada);
+            for (int i = 0; i < grupos.Length; i++) pendientes.Enqueue(grupos[i]);
+            PedirSiguienteGrupo();
+        }
+
+        void PedirSiguienteGrupo()
+        {
+            if (pendientes.Count == 0 || generador == null || generador.EstaGenerando) return;
+            GrupoOleada grupo = pendientes.Peek();
+            if (!generador.GenerarGrupo(grupo.Tipo, grupo.Cantidad, grupo.Intervalo)) return;
+            pendientes.Dequeue();
+        }
+
+        void AlAgotarseEnemigos()
+        {
+            if (enAviso || cerrando || !EsOleada(State)) return;
+            enAviso = true;
+            if (generador != null && (generador.EstaGenerando || generador.EnemigosVivos > 0))
+            {
+                enAviso = false;
                 return;
             }
 
-            TryAdvance();
-        }
-
-        void ChangeState(GameState next)
-        {
-            State = next;
-
-            if (IsWave(next) && waveManager != null)
-                waveManager.Begin(next);
-
-            if (next == GameState.GameOver || next == GameState.Victory)
+            if (pendientes.Count > 0)
             {
-                if (waveManager != null)
-                    waveManager.Stop();
+                PedirSiguienteGrupo();
+                enAviso = false;
+                return;
             }
+
+            Avanzar();
+            enAviso = false;
         }
 
-        void TryAdvance()
+        void Avanzar()
         {
-            if (advancing || resetting)
-                return;
-
-            if (!IsWave(State))
-                return;
-
-            if (alive > 0)
-                return;
-
-            if (waveManager != null && waveManager.PendingSpawns > 0)
-                return;
-
-            advancing = true;
-
-            if (State == GameState.Wave1)
-                ChangeState(GameState.Wave2);
-            else if (State == GameState.Wave2)
-                ChangeState(GameState.Wave3);
-            else if (State == GameState.Wave3)
-                ChangeState(GameState.Boss);
-            else if (State == GameState.Boss)
-                ChangeState(GameState.Victory);
-
-            advancing = false;
+            if (State == GameState.Wave1) CambiarEstado(GameState.Wave2);
+            else if (State == GameState.Wave2) CambiarEstado(GameState.Wave3);
+            else if (State == GameState.Wave3) CambiarEstado(GameState.Wave4);
+            else if (State == GameState.Wave4) CambiarEstado(GameState.Boss);
+            else if (State == GameState.Boss) CambiarEstado(GameState.Victory);
         }
 
-        static bool IsWave(GameState state)
+        void AlMorirJugador()
         {
-            return state == GameState.Wave1 ||
-                   state == GameState.Wave2 ||
-                   state == GameState.Wave3 ||
-                   state == GameState.Boss;
+            if (cerrando) return;
+            if (State == GameState.Waiting || State == GameState.Victory || State == GameState.GameOver) return;
+            CambiarEstado(GameState.GameOver);
+        }
+
+        static bool EsOleada(GameState estado)
+        {
+            return estado == GameState.Wave1 || estado == GameState.Wave2 || estado == GameState.Wave3
+                || estado == GameState.Wave4 || estado == GameState.Boss;
         }
     }
 }

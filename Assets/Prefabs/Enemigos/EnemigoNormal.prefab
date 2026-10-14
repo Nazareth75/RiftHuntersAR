@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 1439154136192036894}
   - component: {fileID: 2193094411793507178}
   - component: {fileID: 2731378334414166315}
+  - component: {fileID: 7100000000000000101}
   m_Layer: 0
   m_Name: EnemigoNormal
   m_TagString: Untagged
@@ -178,3 +179,19 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7100000000000000101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1352285526137763018}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e1a92b6d84f0e9a3c5d18e2b74f60, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.ModeloDeIntegracion
+  modelo: {fileID: 4475814382787626003, guid: dff754ab1963d1c4b8fd5e8e37a61185, type: 3}
+  efectoDano: {fileID: 8172077360648950497, guid: 6327448d6243b81428926b55ee6b8c90, type: 3}
+  efectoMuerte: {fileID: 5577112237590712605, guid: 7b119908fd25876459099d3aa4673983, type: 3}
+  efectoAparicion: {fileID: 0}

@@ -102,6 +102,7 @@ GameObject:
   - component: {fileID: 983118592333090009}
   - component: {fileID: 1731856734649834729}
   - component: {fileID: 8901139177667687497}
+  - component: {fileID: 7100000000000000102}
   m_Layer: 0
   m_Name: EnemigoRapido
   m_TagString: Untagged
@@ -178,3 +179,19 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.RespuestaVisualEnemigo
   duracionDestello: 0.12
+--- !u!114 &7100000000000000102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2698691561805206894}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c4e1a92b6d84f0e9a3c5d18e2b74f60, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.ModeloDeIntegracion
+  modelo: {fileID: 9017502718233521806, guid: 297328f09b07e9d4c977714ec95bf705, type: 3}
+  efectoDano: {fileID: 8172077360648950497, guid: 6327448d6243b81428926b55ee6b8c90, type: 3}
+  efectoMuerte: {fileID: 5577112237590712605, guid: 7b119908fd25876459099d3aa4673983, type: 3}
+  efectoAparicion: {fileID: 0}

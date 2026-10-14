@@ -1,0 +1,44 @@
+{
+  "asset": "Portal_Final",
+  "meshes": 16,
+  "triangles": 1980,
+  "vertices": 1334,
+  "materials": [
+    "PlayerEnergy",
+    "RiftEnergy",
+    "TechMetalDark",
+    "TechMetalLight"
+  ],
+  "parts": [
+    "Portal_Frame",
+    "Portal_Fragments_00",
+    "Portal_Fragments_01",
+    "Portal_Fragments_02",
+    "Portal_Fragments_03",
+    "Portal_Fragments_04",
+    "Portal_Fragments_05",
+    "Portal_Fragments_06",
+    "Portal_Fragments_07",
+    "Portal_Fragments_08",
+    "Portal_Fragments_09",
+    "Portal_Fragments_10",
+    "Portal_Fragments_11",
+    "Portal_Fragments_12",
+    "Portal_Fragments_13",
+    "Portal_CoreReference",
+    "Portal_Fragments"
+  ],
+  "dimensions_xyz_m": [
+    1.2430785298347473,
+    0.16706325113773346,
+    1.25
+  ],
+  "height_m": 1.25,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}

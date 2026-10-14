@@ -1,0 +1,1 @@
+PASS: real MainMenu Start event loads ARGame; HUD Awake/Start/LateUpdate; dynamic score/ammo/wave/count/hearts; legacy canvas hidden and raycaster disabled; legacy reload/retry present. Errors=0. AR device tracking not tested in Editor.

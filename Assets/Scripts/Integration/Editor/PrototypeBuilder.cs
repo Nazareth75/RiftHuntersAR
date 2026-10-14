@@ -3,9 +3,6 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Build;
-#if UNITY_ANDROID
-using UnityEditor.Android;
-#endif
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEditor.XR.ARCore;
@@ -369,10 +366,10 @@ namespace RiftHuntersAR.Integration.Editor
         {
 #if UNITY_ANDROID
             if(EditorUserBuildSettings.activeBuildTarget!=BuildTarget.Android) throw new Exception("Switch to Android before build");
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel36;
+            AssetDatabase.SaveAssets();
             Directory.CreateDirectory("Builds/Android");
-            string previousSdk=AndroidExternalToolsSettings.sdkRootPath;
-            string bundledSdk=Path.Combine(EditorApplication.applicationContentsPath,"PlaybackEngines/AndroidPlayer/SDK");
-            string localSdk=Path.GetFullPath("Builds/Toolchain/AndroidSDK");
+            // Unity 6000.3 no compila AndroidExternalToolsSettings. No se toca el SDK desde aquí.
             BuildReport report;
             bool outputCopyFailed = false;
             Directory.CreateDirectory("Logs");
@@ -384,15 +381,11 @@ namespace RiftHuntersAR.Integration.Editor
             Application.logMessageReceived += log;
             try
             {
-                if(File.Exists(Path.Combine(localSdk,"cmdline-tools/latest/bin/sdkmanager.bat"))) AndroidExternalToolsSettings.sdkRootPath=localSdk;
-                string escenaBuild = File.Exists("Assets/Scenes/Gameplay/ARCombate.unity")
-                    ? "Assets/Scenes/Gameplay/ARCombate.unity" : ScenePath;
-                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{escenaBuild},locationPathName="Builds/Android/RiftHuntersAR_Playtest.apk",target=BuildTarget.Android,options=BuildOptions.Development});
+                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{"Assets/Scenes/MainMenu/MainMenu.unity",ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Fase2_Test.apk",target=BuildTarget.Android,options=BuildOptions.Development});
             }
             finally
             {
                 Application.logMessageReceived -= log;
-                AndroidExternalToolsSettings.sdkRootPath=string.Equals(previousSdk,bundledSdk,StringComparison.OrdinalIgnoreCase) ? string.Empty : previousSdk;
             }
             string generatedGradle = "Library/Bee/Android/Prj/IL2CPP/Gradle";
             string shortApk = "Builds/g/launcher/outputs/apk/debug/launcher-debug.apk";
@@ -408,7 +401,7 @@ namespace RiftHuntersAR.Integration.Editor
                 string expected = generatedGradle + "/launcher/build/outputs/apk/debug/launcher-debug.apk";
                 Directory.CreateDirectory(Path.GetDirectoryName(expected));
                 File.Copy(shortApk, expected, true);
-                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Playtest.apk", true);
+                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Fase2_Test.apk", true);
                 repaired = outputCopyFailed;
             }
             if (repaired)

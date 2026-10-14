@@ -1,0 +1,34 @@
+{
+  "asset": "EnemyTank_Final",
+  "meshes": 8,
+  "triangles": 2600,
+  "vertices": 1439,
+  "materials": [
+    "EnemyEnergy",
+    "MetalDark",
+    "MetalLight"
+  ],
+  "parts": [
+    "Body",
+    "Head",
+    "Armor",
+    "Core",
+    "Leg_FL",
+    "Leg_BL",
+    "Leg_FR",
+    "Leg_BR"
+  ],
+  "dimensions_xyz_m": [
+    1.1775323748588562,
+    1.0067059993743896,
+    0.949999988079071
+  ],
+  "height_m": 0.95,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}

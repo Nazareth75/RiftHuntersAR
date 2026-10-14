@@ -23,9 +23,7 @@ namespace RiftHuntersAR.Combat
         private bool pruebaEscritorio;
         public void HabilitarPruebaEscritorio()
         {
-#if UNITY_EDITOR
-            pruebaEscritorio = true;
-#endif
+            if (Application.isEditor || !Application.isMobilePlatform) pruebaEscritorio = true;
         }
         // Mantiene las interfaces del prototipo para su escena y sus pruebas.
         public void ConectarSistema(RiftHunters.Combate.GestorArmas sistema)
