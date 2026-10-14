@@ -1,23 +1,18 @@
+using System;
 using UnityEngine;
-
-namespace RiftHunters.Game
+namespace RiftHuntersAR.Game
 {
-    // Los puntos solo entran por EnemyDefeated.
-    public class ScoreManager : MonoBehaviour
+    public sealed class ScoreManager : MonoBehaviour
     {
         public int Score { get; private set; }
-
-        public void Add(int amount)
+        public event Action<int> Changed;
+        public void ResetScore() { Score=0; Changed?.Invoke(Score); }
+        public void AddEnemyScore() => AgregarPuntos(100);
+        public void AgregarPuntos(int cantidad)
         {
-            if (amount <= 0)
-                return;
-
-            Score += amount;
-        }
-
-        public void ResetScore()
-        {
-            Score = 0;
+            if (cantidad <= 0) return;
+            Score += cantidad;
+            Changed?.Invoke(Score);
         }
     }
 }

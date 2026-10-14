@@ -6,8 +6,17 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Gameplay/ARCombate.unity
+    guid: 454f672c352a4e39a6085c1a01073132
+  - enabled: 0
+    path: Assets/Scenes/Gameplay/ARGame.unity
+    guid: e9beda356b7608f458e0477bdf70607e
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: cb738971d8b36c945875421cc6788dfa, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+    com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: 62cc8fe9995d259409d6441b3aefef27, type: 2}
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 92bb9d7ade706884aa63a36e95f2b22e, type: 2}
   m_UseUCBPForAssetBundles: 0
