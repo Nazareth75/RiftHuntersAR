@@ -66,6 +66,10 @@ namespace RiftHuntersAR.Integration
         public float TiempoPartida => GameManager.Instance != null ? GameManager.Instance.MatchSeconds : 0f;
         public string TextoCuenta => GameManager.Instance != null ? GameManager.Instance.TextoCuenta : "";
         public float FraccionJefe => adaptador != null ? adaptador.FraccionJefe : -1f;
+        public RiftHunters.Combate.NucleosJefe NucleosJefe => adaptador != null ? adaptador.Nucleos : null;
+        public RiftHunters.Combate.GestorArmas Armas => enlaceCombate != null ? enlaceCombate.Armas : null;
+        public RiftHunters.Combate.GeneradorEnemigos Generador => enlaceCombate != null ? enlaceCombate.Generador : null;
+        public PlasmaWeapon Arma => weapon;
         public static bool EsComputadora => Application.isEditor || !Application.isMobilePlatform;
         public bool ModoComputadora => pruebaEscritorio;
         public bool EnPausa => pausaPrueba;
@@ -201,6 +205,7 @@ namespace RiftHuntersAR.Integration
             weapon.ConectarSistema(enlaceCombate.Armas);
             adaptador = gameObject.AddComponent<AdaptadorGenerador>();
             adaptador.Unir(enlaceCombate.Generador, catalogo);
+            gameObject.AddComponent<SonidosPartida>().Unir(this);
             PuentePuntuacion puntos = gameObject.AddComponent<PuentePuntuacion>();
             puntos.Unir(score);
             PuenteVida vida = gameObject.AddComponent<PuenteVida>();
@@ -419,7 +424,9 @@ namespace RiftHuntersAR.Integration
                     }
                 }
                 if (state == "COUNTDOWN") statusText.text = TextoCuenta;
-                else if (state == "WAVE") statusText.text = EsJefe ? "JEFE" : $"OLEADA {wave}/4";
+                else if (state == "WAVE") statusText.text = EsJefe
+                    ? (NucleosJefe != null ? $"JEFE: {NucleosJefe.Pista}" : "JEFE")
+                    : $"OLEADA {wave}/4";
                 else statusText.text = state == "VICTORY" ? "VICTORIA" : state == "GAME_OVER" ? "GAME OVER" : state;
                 if (state == "VICTORY" || state == "GAME_OVER") retryButton.gameObject.SetActive(true);
                 return;

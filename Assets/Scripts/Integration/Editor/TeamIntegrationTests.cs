@@ -28,7 +28,7 @@ namespace RiftHuntersAR.Integration.Editor
         static Enemigo target;
         static int initialAmmo, initialScore, points, shots, gun;
         static double next, phaseStart;
-        static bool sawHit, sawBoss;
+        static bool sawHit, sawBoss, checkedCores;
         static readonly HashSet<int> waves=new();
         static TeamIntegrationTests() { EditorApplication.update+=Poll; Application.logMessageReceived+=Log; }
         static void Require(bool value,string message) { if(!value) throw new Exception(message); }
@@ -199,15 +199,36 @@ namespace RiftHuntersAR.Integration.Editor
                     Require(controller.Player.CurrentHealth==100 && hud.score.Score==0 && hud.weapon.CurrentAmmo==hud.weapon.MagazineSize,"Retry did not reset shared state");
                     Require(controller.CurrentState=="COUNTDOWN" && enlace.EnemigosVivos==0,"Retry duplicates enemies or fails countdown");
                     Record("PASS real Retry button resets health/score/ammo/generator and restarts countdown");
-                    Time.timeScale=5; waves.Clear(); sawBoss=false; Stage(9); return;
+                    Time.timeScale=5; waves.Clear(); sawBoss=false; checkedCores=false; Stage(9); return;
                 }
                 if(stage==9)
                 {
                     if(controller.CurrentWave>0) waves.Add(controller.CurrentWave);
                     if(controller.EsJefe) { sawBoss=true; if(enlace.EnemigosVivos>0) Require(hud.bossHUD.gameObject.activeSelf,"Boss health HUD not connected"); }
-                    foreach(var enemy in Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None)) if(enemy.Vida>0) enemy.RecibirDano(enemy.VidaMaxima);
+                    var cores=controller.NucleosJefe;
+                    if(cores!=null && !checkedCores)
+                    {
+                        var boss=cores.GetComponent<Enemigo>();
+                        var left=cores.transform.Find("Nucleo brazo izquierdo").GetComponent<Enemigo>();
+                        var right=cores.transform.Find("Nucleo brazo derecho").GetComponent<Enemigo>();
+                        var center=cores.transform.Find("Nucleo central").GetComponent<Enemigo>();
+                        int hp=boss.Vida, coreHp=center.Vida;
+                        boss.RecibirDano(9999); center.RecibirDano(9999);
+                        Require(boss.Vida==hp && center.Vida==coreHp && !cores.CentralExpuesto,"Boss shields not preserved");
+                        left.RecibirDano(left.VidaMaxima);
+                        Require(!cores.IzquierdoVivo && cores.DerechoVivo && !cores.CentralExpuesto,"First arm incorrectly exposes center");
+                        right.RecibirDano(right.VidaMaxima);
+                        Require(cores.CentralExpuesto && !center.Invulnerable,"Both arms fail to expose center");
+                        int score=hud.score.Score;
+                        center.RecibirDano(center.VidaMaxima);
+                        Require(boss.Vida==0 && hud.score.Score==score+boss.Puntos,"Central death fails boss score");
+                        boss.RecibirDano(9999);
+                        Require(hud.score.Score==score+boss.Puntos,"Boss score duplicated");
+                        checkedCores=true; Record("PASS boss body/central shields, left then right arm, exposed central, boss death and score exactly once");
+                    }
+                    foreach(var enemy in Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None)) if(enemy.Vida>0 && enemy.GetComponentInParent<NucleosJefe>()==null) enemy.RecibirDano(enemy.VidaMaxima);
                     if(controller.CurrentState!="VICTORY") return;
-                    Require(waves.SetEquals(new[]{1,2,3,4}) && sawBoss,"Team wave/boss progression missing");
+                    Require(waves.SetEquals(new[]{1,2,3,4}) && sawBoss && checkedCores,"Team wave/boss progression missing");
                     Require(hud.score.Score>0 && hud.resultPanel.activeSelf && enlace.EnemigosVivos==0,"Victory score/result/counter wrong");
                     Record("PASS four team waves and boss reach Victory; score/counter and approved boss/result HUD work");
                     Time.timeScale=1; hud.mainMenu.onClick.Invoke(); Stage(10); return;

@@ -18,13 +18,18 @@ namespace RiftHunters.Combate
         private Transform objetivo;
         private bool finalizado;
         private bool pausado;
+        // 0: ataca una vez y desaparece. Mayor que 0: se queda y repite el ataque (jefe).
+        private float intervaloAtaque;
+        private float siguienteAtaque;
         public int Vida { get; private set; }
         public int Puntos => puntos;
         public int VidaMaxima => vidaMaxima;
+        public bool Invulnerable { get; set; }
         public event Action VidaCambiada;
         public event Action<Enemigo> Murio;
         public event Action<int> AtacoJugador;
         public event Action<Enemigo> Retirado;
+        public event Action ImpactoBloqueado;
 
         private void Awake() => Vida = vidaMaxima;
 
@@ -38,6 +43,12 @@ namespace RiftHunters.Combate
             finalizado = false;
         }
 
+        public void ConfigurarAtaqueContinuo(float intervalo, float distancia)
+        {
+            intervaloAtaque = Mathf.Max(0, intervalo);
+            distanciaAtaque = Mathf.Max(0.1f, distancia);
+        }
+
         public void Pausar(bool pausa) => pausado = pausa;
         private void OnDestroy() => Retirado?.Invoke(this);
 
@@ -49,6 +60,13 @@ namespace RiftHunters.Combate
             Vector3 destino = new Vector3(objetivo.position.x, transform.position.y, objetivo.position.z);
             if (Vector3.Distance(transform.position, destino) <= distanciaAtaque)
             {
+                if (intervaloAtaque > 0)
+                {
+                    if (Time.time < siguienteAtaque) return;
+                    siguienteAtaque = Time.time + intervaloAtaque;
+                    AtacoJugador?.Invoke(danoAtaque);
+                    return;
+                }
                 finalizado = true;
                 // El receptor decide como aplicar vida, escudo o derrota.
                 AtacoJugador?.Invoke(danoAtaque);
@@ -62,6 +80,11 @@ namespace RiftHunters.Combate
         public void RecibirDano(int dano)
         {
             if (pausado || finalizado || Vida <= 0 || dano <= 0) return;
+            if (Invulnerable)
+            {
+                ImpactoBloqueado?.Invoke();
+                return;
+            }
             Vida = Mathf.Max(0, Vida - dano);
             VidaCambiada?.Invoke();
             Debug.Log($"{name}: {Vida}/{vidaMaxima} HP", this);

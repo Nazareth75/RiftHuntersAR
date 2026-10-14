@@ -14,7 +14,10 @@ namespace RiftHuntersAR.Integration
         Transform camara;
         Transform contenedor;
         Enemigo jefe;
+        NucleosJefe nucleos;
         TipoEnemigo pedido;
+
+        public NucleosJefe Nucleos => jefe != null ? nucleos : null;
 
         public int EnemigosVivos => generador != null ? generador.EnemigosVivos : 0;
         public bool EstaGenerando => generador != null && generador.EstaGenerando;
@@ -25,6 +28,7 @@ namespace RiftHuntersAR.Integration
             get
             {
                 if (jefe == null || jefe.VidaMaxima <= 0) return -1f;
+                if (nucleos != null) return nucleos.Fraccion;
                 return (float)jefe.Vida / jefe.VidaMaxima;
             }
         }
@@ -66,6 +70,7 @@ namespace RiftHuntersAR.Integration
         public void Limpiar()
         {
             jefe = null;
+            nucleos = null;
             if (generador != null) generador.Limpiar();
         }
 
@@ -78,7 +83,10 @@ namespace RiftHuntersAR.Integration
 
         void AlGenerar(Enemigo enemigo)
         {
-            if (pedido == TipoEnemigo.Jefe) jefe = enemigo;
+            if (pedido != TipoEnemigo.Jefe) return;
+            jefe = enemigo;
+            nucleos = enemigo.gameObject.AddComponent<NucleosJefe>();
+            nucleos.Inicializar(camara);
         }
 
         Enemigo Prefab(TipoEnemigo tipo)
