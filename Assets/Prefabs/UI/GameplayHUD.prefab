@@ -1170,7 +1170,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: b3a3d324253e467458c83e38227b5744, type: 3}
+  m_Sprite: {fileID: -2061172879511746179, guid: b3a3d324253e467458c83e38227b5744, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -1533,9 +1533,9 @@ MonoBehaviour:
   heartFull: {fileID: 21300000, guid: 2cf318d25a6fc474d8d5278577491899, type: 3}
   heartEmpty: {fileID: 21300000, guid: 7054b176f3092e141a8ea79e45240c3f, type: 3}
   heartDamaged: {fileID: 21300000, guid: 39a93dc05e16a614aa48889d062dcc27, type: 3}
-  scanMessage: {fileID: 21300000, guid: b3a3d324253e467458c83e38227b5744, type: 3}
-  placeMessage: {fileID: 21300000, guid: 862b52a9ebc0a454c92f720e03daa58e, type: 3}
-  killMessage: {fileID: 21300000, guid: 325813aa4d8a50940b93803705183a7d, type: 3}
+  scanMessage: {fileID: -2061172879511746179, guid: b3a3d324253e467458c83e38227b5744, type: 3}
+  placeMessage: {fileID: 1163318680797120826, guid: 862b52a9ebc0a454c92f720e03daa58e, type: 3}
+  killMessage: {fileID: 2376314402790030311, guid: 325813aa4d8a50940b93803705183a7d, type: 3}
   scoreValue: {fileID: 381177880548526478}
   ammoValue: {fileID: 3573335026695998420}
   waveValue: {fileID: 1891761154828325047}
