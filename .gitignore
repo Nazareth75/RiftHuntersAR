@@ -32,3 +32,9 @@ Thumbs.db
 
 /.utmp/
 /Assets/XR/Resources/XRSimulationRuntimeSettings.asset*
+
+/ArtRenders/**/*.log
+/ArtSource/**/*.blend1
+/ArtSource/**/*.blend2
+/Tools/ArtPipeline/__pycache__/
+
