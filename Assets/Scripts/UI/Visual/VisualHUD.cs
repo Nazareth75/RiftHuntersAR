@@ -128,6 +128,7 @@ namespace RiftHuntersAR.UI.Visual
             message.sprite = killed ? killMessage : colocar ? placeMessage : scanMessage;
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;
+            else if (controller != null && !controller.SeguimientoDisponible && state == "WAVE") stateValue.text = status;
             else stateValue.text = "";
             bool finished = state == "GAME_OVER" || state == "VICTORY";
             resultTitle.text = state == "VICTORY" ? "VICTORIA" : "GAME OVER";

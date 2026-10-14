@@ -34,6 +34,10 @@ namespace RiftHuntersAR.Integration
         private bool placed;
         private PlayerHealth player;
         private PortalSpawnPoint activePortal;
+        private ARAnchor activeAnchor;
+        private float tiempoSinSeguimiento;
+        private const float RetardoMensajePerdida = 0.5f;
+
         private Text playerText, ammoText, hitMarker;
         private Button retryButton, reloadButton;
         private float feedbackUntil;
@@ -46,9 +50,12 @@ namespace RiftHuntersAR.Integration
         private bool pausaPrueba;
         private AdaptadorGenerador adaptador;
         private bool ganchosListos;
+        private bool AnclaDisponible => activeAnchor == null
+        || activeAnchor.trackingState != TrackingState.None;
 
         public bool SeguimientoDisponible => !aplicacionPausada && !pausaPrueba
-            && (pruebaEscritorio || ARSession.state == ARSessionState.SessionTracking);
+            && (pruebaEscritorio
+                || (ARSession.state == ARSessionState.SessionTracking && AnclaDisponible));
         public Camera CamaraJuego => weapon.AimCamera;
         public PlayerHealth Player => player;
         public string CurrentState => state;
@@ -394,13 +401,13 @@ namespace RiftHuntersAR.Integration
 
             if (!tracking)
             {
-                if (pruebaEscritorio) statusText.text = "PAUSA: P O ESC PARA SEGUIR";
-                else statusText.text = ARSession.state == ARSessionState.Unsupported
-                    ? "Este teléfono no puede usar realidad aumentada."
-                    : TextoEscanear;
+                tiempoSinSeguimiento += Time.unscaledDeltaTime;
+                if (pruebaEscritorio) { statusText.text = "PAUSA: P O ESC PARA SEGUIR"; return; }
+                if (!placed || tiempoSinSeguimiento >= RetardoMensajePerdida)
+                    statusText.text = MensajeSinSeguimiento();
                 return;
             }
-
+            tiempoSinSeguimiento = 0f;
             if (placed)
             {
                 if (planes != null)
@@ -437,6 +444,7 @@ namespace RiftHuntersAR.Integration
             Pose pose = hits[0].pose;
             ARAnchor anchor = anchors.AttachAnchor(selected, pose);
             if (anchor == null) { UpdateFeedback("PLACEMENT FAILED: TAP AGAIN"); return; }
+            activeAnchor = anchor;
             PortalSpawnPoint portal = Instantiate(portalPrefab, pose.position, pose.rotation, anchor.transform);
             foreach (ARPlane plane in planes.trackables)
             {
@@ -445,7 +453,22 @@ namespace RiftHuntersAR.Integration
             }
             ComenzarPartida(portal);
         }
-
+        private string MensajeSinSeguimiento()
+        {
+            if (ARSession.state == ARSessionState.Unsupported) return "AR NOT SUPPORTED";
+            if (!placed) return "SCAN ENVIRONMENT";
+            if (activeAnchor != null && activeAnchor.trackingState == TrackingState.None)
+                return "PORTAL PERDIDO: MIRA DONDE LO COLOCASTE";
+            switch (ARSession.notTrackingReason)
+            {
+                case NotTrackingReason.ExcessiveMotion: return "TRACKING PERDIDO: MUEVE EL TELEFONO DESPACIO";
+                case NotTrackingReason.InsufficientLight: return "POCA LUZ: ENCIENDE UNA LUZ";
+                case NotTrackingReason.InsufficientFeatures: return "APUNTA A UNA SUPERFICIE CON DETALLES";
+                case NotTrackingReason.Initializing:
+                case NotTrackingReason.Relocalizing: return "RECUPERANDO TRACKING: MIRA TU ENTORNO";
+                default: return "TRACKING PERDIDO: MIRA TU ENTORNO";
+            }
+        }
         private void CopiarEstado()
         {
             GameManager partida = GameManager.Instance;
