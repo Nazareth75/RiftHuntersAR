@@ -123,7 +123,8 @@ namespace RiftHuntersAR.UI.Visual
             for(int i=0;i<hearts.Length;i++) hearts[i].sprite = i < full ? (damaged && i == full-1 ? heartDamaged : heartFull) : heartEmpty;
             crosshair.sprite = hit ? crosshairHit : crosshairNormal;
             bool colocar = status == ARPrototypeController.TextoColocar;
-            message.gameObject.SetActive(killed || state == "SCANNING");
+            bool editorSinPlano = status == ARPrototypeController.TextoEditorColocar;
+            message.gameObject.SetActive((killed || state == "SCANNING") && !editorSinPlano);
             message.sprite = killed ? killMessage : colocar ? placeMessage : scanMessage;
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;

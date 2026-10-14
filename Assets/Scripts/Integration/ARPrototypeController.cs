@@ -16,6 +16,7 @@ namespace RiftHuntersAR.Integration
     {
         public const string TextoEscanear = "Mueve lentamente el teléfono para reconocer el entorno.";
         public const string TextoColocar = "Toca para colocar el portal.";
+        public const string TextoEditorColocar = "ENTER O CLIC PARA COLOCAR EL PORTAL";
 
         [SerializeField] private ARPlaneManager planes;
         [SerializeField] private ARRaycastManager raycasts;
@@ -66,6 +67,44 @@ namespace RiftHuntersAR.Integration
             weapon.HabilitarPruebaEscritorio();
 #endif
         }
+
+        static bool SeguimientoARReal()
+        {
+            return ARSession.state == ARSessionState.SessionTracking;
+        }
+
+#if UNITY_EDITOR
+        bool PulsoColocarSimulado()
+        {
+            Keyboard teclado = Keyboard.current;
+            if (teclado != null && (teclado.enterKey.wasPressedThisFrame || teclado.numpadEnterKey.wasPressedThisFrame))
+                return true;
+            if (Mouse.current == null || !Mouse.current.leftButton.wasPressedThisFrame)
+                return false;
+            return !OverUI(Mouse.current.position.ReadValue());
+        }
+
+        void ColocarPortalSimulado()
+        {
+            if (!pruebaEscritorio || placed || portalPrefab == null) return;
+            Camera camara = weapon != null ? weapon.AimCamera : Camera.main;
+            Vector3 posicion = new Vector3(0f, 0f, 2.2f);
+            Quaternion rotacion = Quaternion.identity;
+            if (camara != null)
+            {
+                Vector3 adelante = camara.transform.forward;
+                adelante.y = 0f;
+                if (adelante.sqrMagnitude < 0.001f) adelante = Vector3.forward;
+                adelante.Normalize();
+                posicion = camara.transform.position + adelante * 2.2f;
+                rotacion = Quaternion.LookRotation(-adelante, Vector3.up);
+            }
+            var origen = new GameObject("Origen del portal de prueba");
+            origen.transform.SetPositionAndRotation(posicion, rotacion);
+            PortalSpawnPoint portal = Instantiate(portalPrefab, posicion, rotacion, origen.transform);
+            ComenzarPartida(portal);
+        }
+#endif
 
         public void IniciarPruebaEscritorio(Vector3 posicion)
         {
@@ -338,6 +377,10 @@ namespace RiftHuntersAR.Integration
             if (state == "COUNTDOWN" && !string.IsNullOrEmpty(TextoCuenta))
                 feedbackText.text = TextoCuenta;
 
+#if UNITY_EDITOR
+            if (!SeguimientoARReal())
+                HabilitarPruebaEscritorio();
+#endif
             bool tracking = SeguimientoDisponible;
             var armaActual = enlaceCombate != null && enlaceCombate.Armas != null ? enlaceCombate.Armas.Actual : null;
             if (reloadButton != null)
@@ -373,11 +416,15 @@ namespace RiftHuntersAR.Integration
                 return;
             }
 
-            if (pruebaEscritorio)
+#if UNITY_EDITOR
+            if (!placed && pruebaEscritorio && !SeguimientoARReal())
             {
-                statusText.text = "PRUEBA DE ESCRITORIO: ENTER PARA COLOCAR PORTAL";
+                statusText.text = TextoEditorColocar;
+                if (PulsoColocarSimulado())
+                    ColocarPortalSimulado();
                 return;
             }
+#endif
 
             bool hasPlane = false;
             foreach (ARPlane plane in planes.trackables)
