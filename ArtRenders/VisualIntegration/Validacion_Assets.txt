@@ -1,0 +1,9 @@
+PASS: scene, HUD references, prefabs, Basic components + one collider + AimPoint, portal SpawnPoint, three separated boss weak points, URP shaders.
+EnemyBasic_Final height=0,6000001 width=0,9074711 yaw=180
+Portal_Final height=1,25 width=1,243078 yaw=180
+EnemyFast_Final height=0,52 width=0,3928069 yaw=180
+EnemyTank_Final height=0,95 width=1,177532 yaw=180
+RiftGuardian_Final height=1,85 width=1,74675 yaw=180
+PlasmaBlaster_Final height=0,3 width=0,214461 yaw=180
+ElectricCannon_Final height=0,36 width=0,2820346 yaw=180
+EnergyLauncher_Final height=0,42 width=0,392876 yaw=180

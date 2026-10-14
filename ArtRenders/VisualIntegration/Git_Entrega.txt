@@ -1,0 +1,8 @@
+f7fab7c fix: ocultar HUD provisional desde la escena y preparar camara de menu
+15d8404 feat: agregar efectos visuales ligeros y limpiar mensajes
+be75eb9 feat: aplicar diseno visual al menu
+f1f5797 feat: mejorar visualizacion de planos ar
+f1dbf41 feat: reemplazar interfaz provisional con HUD conectado
+f1a7611 feat: integrar modelos finales de enemigos portal y armas
+4c7611c chore: importar paquete visual aprobado
+Rama: integracion-visual. Base: diseno-visual 32e8975. Remoto: https://github.com/Nazareth75/RiftHuntersAR.git. El commit de documentacion y capturas se identifica con git log; no puede incluir su propio hash dentro del archivo versionado. Push exclusivo a origin/integracion-visual.
