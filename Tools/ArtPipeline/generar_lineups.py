@@ -26,6 +26,7 @@ def label(scene,camera,text,x,y,size=.14):
     data=bpy.data.curves.new('Label_'+text,'FONT');data.body=text;data.align_x='CENTER';data.size=size;data.extrude=0
     ob=bpy.data.objects.new('Label_'+text,data);scene.collection.objects.link(ob);ob.location=(x,y,.035)
     ob.rotation_euler=camera.rotation_euler;data.materials.append(mat('Label_'+text,(.65,.78,.9),0,.8,.25))
+    return ob
 def run(all_assets):
     bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
     scene=bpy.context.scene
@@ -42,12 +43,17 @@ def run(all_assets):
     camera.location=(.25,-8,5.6 if all_assets else 3.7)
     target=Vector((.1,-.3,.62)) if all_assets else Vector((.1,.65,.63))
     camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler()
-    camera.data.ortho_scale=7.0
+    camera.data.ortho_scale=7.6
+    floor=next(o for o in scene.objects if o.type=='MESH' and o.name.startswith('PREVIEW_ONLY_Ground')).data.materials[0]
+    floor.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(.003,.004,.006,1)
     for i,name in enumerate(selected):
         if i<4:x,y=positions[i];ly=y-.95
         else:x,y=[(-2.5,-2.1),(-.8,-2.1),(.7,-2.1),(2.2,-2.1)][i-4];ly=y-.8
         label(scene,camera,name.removesuffix('_Final'),x,ly,.13)
-    label(scene,camera,'ESCALA COMPARTIDA EN METROS | BASIC 0.60 m',.1,2.75,.17)
+    title=label(scene,camera,'ESCALA COMPARTIDA EN METROS | BASIC 0.60 m',0,0,.16)
+    bpy.context.view_layer.update()
+    aspect=scene.render.resolution_y/scene.render.resolution_x
+    title.location=camera.matrix_world@Vector((0,camera.data.ortho_scale*aspect*.5-.28,-8))
     out=ROOT/'ArtRenders'/'Lineups';out.mkdir(parents=True,exist_ok=True)
     scene.render.filepath=str(out/('RiftHunters_3D_Lineup.png' if all_assets else 'RiftHunters_Enemies_Lineup.png'))
     bpy.ops.render.render(write_still=True)
