@@ -1,0 +1,33 @@
+{
+  "revision": 2,
+  "blender": "5.2.2 LTS",
+  "triangles": 2000,
+  "vertices": 1204,
+  "materials": [
+    "MetalDark",
+    "MetalLight",
+    "EnemyEnergy"
+  ],
+  "parts": [
+    "Body",
+    "Armor",
+    "Head",
+    "Core",
+    "Leg_FL",
+    "Leg_FR",
+    "Leg_BL",
+    "Leg_BR"
+  ],
+  "dimensions_blender_xyz_m": [
+    0.9074710309505463,
+    1.1097427606582642,
+    0.6000000238418579
+  ],
+  "height_m": 0.6000000238418579,
+  "pivot": "feet, model origin (0,0,0)",
+  "front_blender": "-Y",
+  "export_axes": "-Z forward / Y up",
+  "rigged": false,
+  "unity_integration": "pending visual approval",
+  "texture_count": 0
+}
