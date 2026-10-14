@@ -1,0 +1,32 @@
+{
+  "asset": "ElectricCannon_Final",
+  "meshes": 6,
+  "triangles": 1880,
+  "vertices": 1012,
+  "materials": [
+    "PlayerEnergy",
+    "TechMetalDark",
+    "TechMetalLight"
+  ],
+  "parts": [
+    "Receiver",
+    "Grip",
+    "EnergyChamber",
+    "Coils",
+    "BarrelCage",
+    "Generator"
+  ],
+  "dimensions_xyz_m": [
+    0.28203459084033966,
+    0.7581602036952972,
+    0.36000001430511475
+  ],
+  "height_m": 0.36,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}
