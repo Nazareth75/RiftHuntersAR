@@ -22,6 +22,7 @@ namespace RiftHuntersAR.UI.Visual
         public Sprite crosshairNormal, crosshairHit, heartFull, heartEmpty, heartDamaged;
         public Sprite scanMessage, placeMessage, killMessage;
         public Text scoreValue, ammoValue, waveValue, enemyValue, stateValue, resultTitle;
+        public Text tiempoValue, detalleFin;
         public GameObject resultPanel;
         public BossHUDView bossHUD;
         public Transform muzzle;
@@ -44,6 +45,13 @@ namespace RiftHuntersAR.UI.Visual
         }
         private void Start()
         {
+            if (ammoValue != null && ammoValue.GetComponent<Button>() == null)
+            {
+                ammoValue.raycastTarget = true;
+                var cambiar = ammoValue.gameObject.AddComponent<Button>();
+                cambiar.targetGraphic = ammoValue;
+                cambiar.onClick.AddListener(() => { if (controller != null) controller.CambiarArma(); });
+            }
             if (preview || legacyCanvas == null) return;
             legacyReload = legacyCanvas.transform.Find("RELOAD")?.GetComponent<Button>();
             legacyRetry = legacyCanvas.transform.Find("RETRY")?.GetComponent<Button>();
@@ -55,14 +63,22 @@ namespace RiftHuntersAR.UI.Visual
         }
         private void Shoot() { if (legacyShoot != null && legacyShoot.interactable) legacyShoot.onClick.Invoke(); }
         private void Reload() { if (legacyReload != null) legacyReload.onClick.Invoke(); }
-        private void Retry() { if (legacyRetry != null) legacyRetry.onClick.Invoke(); }
+        private void Retry()
+        {
+            if (controller != null) controller.ReintentarPartida();
+            else if (legacyRetry != null) legacyRetry.onClick.Invoke();
+        }
         private void Menu() { SceneManager.LoadScene("MainMenu"); }
         private void Feedback(string text)
         {
-            bool hit = text.StartsWith("HIT") || text.StartsWith("ENEMY DESTROYED");
+            bool hit = text.StartsWith("HIT") || text.StartsWith("ENEMY DESTROYED")
+                || text.StartsWith("Impacto:") || text.StartsWith("Enemigo eliminado")
+                || text.StartsWith("Cadena electrica:") || text.StartsWith("Explosion:");
             if (hit) hitUntil = Time.unscaledTime + .16f;
-            if (text.StartsWith("ENEMY DESTROYED")) killUntil = Time.unscaledTime + 1.2f;
-            bool shot = hit || text == "MISS";
+            if (text.StartsWith("ENEMY DESTROYED") || text.StartsWith("Enemigo eliminado")) killUntil = Time.unscaledTime + 1.2f;
+            bool recarga = text.StartsWith("Recarg") || text == "RELOADED" || text.StartsWith("Sin municion") || text.StartsWith("EMPTY");
+            bool shot = !recarga && (hit || text == "MISS" || text.StartsWith("Disparo")
+                || text.StartsWith("Impacto") || text.StartsWith("La electricidad"));
             if (shot && plasmaShot != null && muzzle != null) Instantiate(plasmaShot, muzzle.position, muzzle.rotation);
             // Cosmetic query only. Never applies damage, ammo or score.
             if (text.StartsWith("HIT") && plasmaHit != null && weapon != null && weapon.AimCamera != null)
@@ -80,8 +96,11 @@ namespace RiftHuntersAR.UI.Visual
             previousHP = hp;
             string state = controller.CurrentState;
             bool finished = state == "GAME_OVER" || state == "VICTORY";
-            Draw(state,hp,score.Score,weapon.CurrentAmmo,controller.CurrentWave,controller.AliveEnemies,
-                 legacyStatus == null ? "" : legacyStatus.text, Time.unscaledTime < damageUntil,
+            string status = legacyStatus == null ? "" : legacyStatus.text;
+            if (controller.CurrentState == "SCANNING" || controller.CurrentState == "COUNTDOWN")
+                status = legacyStatus == null ? status : legacyStatus.text;
+            Draw(controller.CurrentState,hp,score.Score,weapon.CurrentAmmo,controller.CurrentWave,controller.AliveEnemies,
+                 status, Time.unscaledTime < damageUntil,
                  Time.unscaledTime < hitUntil, Time.unscaledTime < killUntil);
             shoot.interactable = legacyShoot != null && legacyShoot.interactable;
             reload.interactable = state == "WAVE";
@@ -89,16 +108,78 @@ namespace RiftHuntersAR.UI.Visual
         }
         private void Draw(string state,float hp,int points,int ammo,int wave,int alive,string status,bool damaged,bool hit,bool killed)
         {
-            scoreValue.text = points.ToString(); ammoValue.text = $"{ammo} / 30";
-            waveValue.text = wave > 0 ? $"{Mathf.Clamp(wave,1,3)} / 3" : "— / 3";
+            AsegurarTextos();
+            int cargador = weapon != null ? weapon.MagazineSize : 30;
+            string nombreArma = weapon != null ? weapon.NombreArma : "ARMA";
+            scoreValue.text = points.ToString();
+            ammoValue.text = $"{nombreArma} {ammo}/{cargador}";
+            bool jefe = controller != null && controller.EsJefe;
+            waveValue.text = jefe ? "JEFE" : wave > 0 ? $"{wave} / 4" : "— / 4";
             enemyValue.text = alive.ToString();
-            int full = Mathf.CeilToInt(hp / (100f/3));
+            if (tiempoValue != null)
+                tiempoValue.text = FormatoTiempo(controller != null ? controller.TiempoPartida : 0f);
+            int full = Mathf.CeilToInt(hp / (100f / 3f));
+            if (full > hearts.Length) full = hearts.Length;
             for(int i=0;i<hearts.Length;i++) hearts[i].sprite = i < full ? (damaged && i == full-1 ? heartDamaged : heartFull) : heartEmpty;
             crosshair.sprite = hit ? crosshairHit : crosshairNormal;
+            bool colocar = status == ARPrototypeController.TextoColocar;
             message.gameObject.SetActive(killed || state == "SCANNING");
-            message.sprite = killed ? killMessage : status == "TAP TO PLACE PORTAL" ? placeMessage : scanMessage;
-            stateValue.text = state switch { "COUNTDOWN" => "PREPARATE", "WAVE_COMPLETE" => "OLEADA COMPLETADA", "NEXT_WAVE" => "SIGUIENTE OLEADA", _ => "" };
+            message.sprite = killed ? killMessage : colocar ? placeMessage : scanMessage;
+            if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
+            else if (state == "SCANNING") stateValue.text = status;
+            else stateValue.text = "";
+            bool finished = state == "GAME_OVER" || state == "VICTORY";
             resultTitle.text = state == "VICTORY" ? "VICTORIA" : "GAME OVER";
+            if (detalleFin != null)
+            {
+                int derrotados = controller != null ? controller.EnemigosDerrotados : 0;
+                detalleFin.text = $"PUNTOS {points}\nENEMIGOS {derrotados}\nTIEMPO {FormatoTiempo(controller != null ? controller.TiempoPartida : 0f)}";
+                detalleFin.gameObject.SetActive(finished);
+            }
+            if (bossHUD != null)
+            {
+                float fraccion = controller != null ? controller.FraccionJefe : -1f;
+                bool mostrarJefe = jefe && fraccion >= 0f;
+                bossHUD.gameObject.SetActive(mostrarJefe);
+                if (mostrarJefe) bossHUD.Present(fraccion, false, false, false);
+            }
+        }
+
+        private void AsegurarTextos()
+        {
+            if (tiempoValue == null && scoreValue != null)
+                tiempoValue = CrearTexto(scoreValue, "Tiempo", new Vector2(0f, -80f));
+            if (detalleFin == null && resultTitle != null)
+                detalleFin = CrearTexto(resultTitle, "DetalleFin", new Vector2(0f, -220f));
+        }
+
+        private static Text CrearTexto(Text origen, string nombre, Vector2 desplazamiento)
+        {
+            var go = new GameObject(nombre, typeof(RectTransform));
+            go.transform.SetParent(origen.transform.parent, false);
+            var rt = go.GetComponent<RectTransform>();
+            var baseRt = origen.rectTransform;
+            rt.anchorMin = baseRt.anchorMin;
+            rt.anchorMax = baseRt.anchorMax;
+            rt.pivot = baseRt.pivot;
+            rt.sizeDelta = baseRt.sizeDelta;
+            rt.anchoredPosition = baseRt.anchoredPosition + desplazamiento;
+            var texto = go.AddComponent<Text>();
+            texto.font = origen.font;
+            texto.fontSize = Mathf.Max(28, origen.fontSize - 8);
+            texto.alignment = TextAnchor.MiddleCenter;
+            texto.color = origen.color;
+            texto.raycastTarget = false;
+            texto.horizontalOverflow = HorizontalWrapMode.Overflow;
+            texto.verticalOverflow = VerticalWrapMode.Overflow;
+            return texto;
+        }
+
+        private static string FormatoTiempo(float segundos)
+        {
+            if (segundos < 0f || float.IsNaN(segundos)) segundos = 0f;
+            int total = Mathf.FloorToInt(segundos);
+            return (total / 60).ToString("00") + ":" + (total % 60).ToString("00");
         }
         // Explicit editor-review fixture: synthetic values, never used to advance game state.
         public void ShowReview(string state,float hp,int points,int ammo,int wave,int alive,string status="")
