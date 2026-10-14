@@ -25,3 +25,14 @@ GIT: rama art-integration, commits locales pequeños; sin push. Cambios previos 
 ERRORES: causa del disparo letal original pendiente de reproducir en Android. Hubo una excepción durante hot reload de los scripts sobre la sesión antigua de Play; al iniciar una sesión limpia el HUD pasó Awake y no apareció. Avisos de subsistema XR ausente en Windows esperados.
 
 SIGUIENTE: probar portal, cuatro impactos por Basic, oleadas 1/2/3, munición y recarga, daño y Game Over, Retry y Victory. Quince bajas deben sumar 1500 puntos. Ajustar dificultad con resultados físicos antes de integrar arte.
+
+## Resultado de compilación
+
+Unity: Succeeded, 0 errores, 2 advertencias. Advertencias: Diagnostics Data sin símbolos completos y modificación detectada en el recurso de pruebas TestReferenceImageLibrary.asset del paquete ARCore; no son errores de compilación del gameplay. No se editó manualmente el código del paquete.
+
+APK verificado con apksigner: firma v2 válida, un firmante. Paquete com.rifthunters.ar, ARM64, min SDK 25 y target 36. Tamaño 70.803.396 bytes. SHA256: 0A4813291385BC66863EB2BB56B522CFE93AAD4E3CB768152CA208FB577C4182.
+
+Archivo para adjuntar como documento en WhatsApp:
+C:\Users\HP\Documents\Codex\2026-10-13\files-pasted-by-the-user-quiero\outputs\RiftHuntersAR_Playtest.apk
+
+Commits: 3db32cd (disparo/munición), dd2f28e (gameplay), 01059a9 (pruebas/build/documentación). El APK anterior conserva SHA256 2527BFD5E1D4838F90DF9F905AD462B428100D63D2D65951F1226CE6C918B3E7.
