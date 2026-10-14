@@ -39,6 +39,11 @@ namespace RiftHuntersAR.Integration
         private float playerFlashUntil;
         private string state = "SCANNING";
         private int wave;
+        // Presentation reads the existing state; these properties do not change gameplay.
+        public PlayerHealth Player => player;
+        public string CurrentState => state;
+        public int CurrentWave => wave;
+        public int AliveEnemies => spawner == null ? 0 : spawner.AliveCount;
         private void Awake()
         {
             player = gameObject.AddComponent<PlayerHealth>();
