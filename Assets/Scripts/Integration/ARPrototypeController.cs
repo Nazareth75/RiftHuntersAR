@@ -33,6 +33,9 @@ namespace RiftHuntersAR.Integration
         private PlayerHealth player;
         private EnemySpawner spawner;
         private PortalSpawnPoint activePortal;
+        private ARAnchor activeAnchor;
+        private float tiempoSinSeguimiento;
+        private const float RetardoMensajePerdida = 0.5f;
         private Coroutine loop;
         private Text playerText, ammoText, hitMarker;
         private Button retryButton, reloadButton;
@@ -44,8 +47,12 @@ namespace RiftHuntersAR.Integration
         private bool aplicacionPausada;
         private bool pruebaEscritorio;
         private bool pausaPrueba;
+        private bool AnclaDisponible => activeAnchor == null
+        || activeAnchor.trackingState != TrackingState.None;
+
         public bool SeguimientoDisponible => !aplicacionPausada && !pausaPrueba
-            && (pruebaEscritorio || ARSession.state == ARSessionState.SessionTracking);
+            && (pruebaEscritorio
+                || (ARSession.state == ARSessionState.SessionTracking && AnclaDisponible));
         public Camera CamaraJuego => weapon.AimCamera;
         public string EstadoPartida => state;
         public int OleadaActual => wave;
@@ -290,6 +297,7 @@ namespace RiftHuntersAR.Integration
             Pose pose = hits[0].pose;
             ARAnchor anchor = anchors.AttachAnchor(selected, pose);
             if (anchor == null) { UpdateFeedback("PLACEMENT FAILED: TAP AGAIN"); return; }
+            activeAnchor = anchor;
             PortalSpawnPoint portal = Instantiate(portalPrefab, pose.position, pose.rotation, anchor.transform);
             placed = true;
             foreach (ARPlane plane in planes.trackables)
