@@ -330,6 +330,8 @@ namespace RiftHuntersAR.Integration.Editor
         public static void Build()
         {
             if(EditorUserBuildSettings.activeBuildTarget!=BuildTarget.Android) throw new Exception("Switch to Android before build");
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel36;
+            AssetDatabase.SaveAssets();
             Directory.CreateDirectory("Builds/Android");
             string previousSdk=AndroidExternalToolsSettings.sdkRootPath;
             string bundledSdk=Path.Combine(EditorApplication.applicationContentsPath,"PlaybackEngines/AndroidPlayer/SDK");
@@ -346,7 +348,7 @@ namespace RiftHuntersAR.Integration.Editor
             try
             {
                 if(File.Exists(Path.Combine(localSdk,"cmdline-tools/latest/bin/sdkmanager.bat"))) AndroidExternalToolsSettings.sdkRootPath=localSdk;
-                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Playtest.apk",target=BuildTarget.Android,options=BuildOptions.Development});
+                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{"Assets/Scenes/MainMenu/MainMenu.unity",ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Fase2_Test.apk",target=BuildTarget.Android,options=BuildOptions.Development});
             }
             finally
             {
@@ -367,7 +369,7 @@ namespace RiftHuntersAR.Integration.Editor
                 string expected = generatedGradle + "/launcher/build/outputs/apk/debug/launcher-debug.apk";
                 Directory.CreateDirectory(Path.GetDirectoryName(expected));
                 File.Copy(shortApk, expected, true);
-                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Playtest.apk", true);
+                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Fase2_Test.apk", true);
                 repaired = outputCopyFailed;
             }
             if (repaired)
