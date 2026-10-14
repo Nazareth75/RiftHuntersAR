@@ -1,0 +1,31 @@
+{
+  "asset": "PlasmaBlaster_Final",
+  "meshes": 5,
+  "triangles": 918,
+  "vertices": 521,
+  "materials": [
+    "PlayerEnergy",
+    "TechMetalDark",
+    "TechMetalLight"
+  ],
+  "parts": [
+    "Receiver",
+    "Grip",
+    "PowerCell",
+    "Barrel",
+    "Sight"
+  ],
+  "dimensions_xyz_m": [
+    0.21446102857589722,
+    0.5459171533584595,
+    0.30000001192092896
+  ],
+  "height_m": 0.3,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}
