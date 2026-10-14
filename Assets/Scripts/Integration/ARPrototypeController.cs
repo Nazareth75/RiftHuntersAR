@@ -271,10 +271,13 @@ namespace RiftHuntersAR.Integration
                 && (enlaceCombate == null || (!enlaceCombate.Armas.Actual.EstaRecargando && weapon.CurrentAmmo > 0));
             if (!tracking)
             {
+                tiempoSinSeguimiento += Time.unscaledDeltaTime;
                 if (pruebaEscritorio) { statusText.text = "PAUSA DE PRUEBA: P PARA REANUDAR"; return; }
-                statusText.text = ARSession.state == ARSessionState.Unsupported ? "AR NOT SUPPORTED" : "SCAN ENVIRONMENT";
+                if (!placed || tiempoSinSeguimiento >= RetardoMensajePerdida)
+                    statusText.text = MensajeSinSeguimiento();
                 return;
             }
+            tiempoSinSeguimiento = 0f;
             if (placed)
             {
                 if (planes != null) foreach (ARPlane plane in planes.trackables) { var r = plane.GetComponent<MeshRenderer>(); if (r != null) r.enabled = false; }
@@ -308,6 +311,22 @@ namespace RiftHuntersAR.Integration
             // Keep tracking active; the anchor owns the placed content during plane refinements.
 
             ComenzarPartida(portal);
+        }
+        private string MensajeSinSeguimiento()
+        {
+            if (ARSession.state == ARSessionState.Unsupported) return "AR NOT SUPPORTED";
+            if (!placed) return "SCAN ENVIRONMENT";
+            if (activeAnchor != null && activeAnchor.trackingState == TrackingState.None)
+                return "PORTAL PERDIDO: MIRA DONDE LO COLOCASTE";
+            switch (ARSession.notTrackingReason)
+            {
+                case NotTrackingReason.ExcessiveMotion: return "TRACKING PERDIDO: MUEVE EL TELEFONO DESPACIO";
+                case NotTrackingReason.InsufficientLight: return "POCA LUZ: ENCIENDE UNA LUZ";
+                case NotTrackingReason.InsufficientFeatures: return "APUNTA A UNA SUPERFICIE CON DETALLES";
+                case NotTrackingReason.Initializing:
+                case NotTrackingReason.Relocalizing: return "RECUPERANDO TRACKING: MIRA TU ENTORNO";
+                default: return "TRACKING PERDIDO: MIRA TU ENTORNO";
+            }
         }
         private IEnumerator TrackedWait(float seconds)
         {
