@@ -163,6 +163,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8115172563861268873}
   - component: {fileID: 3742705633066671104}
+  - component: {fileID: 6005612611525310229}
   m_Layer: 0
   m_Name: EnemyBasicPlaceholder
   m_TagString: Untagged
@@ -198,10 +199,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 906c179bd8547dd488afad9427de8084, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RiftHuntersAR.Enemies.EnemyHealth
   maxHealth: 100
   currentHealth: 0
+--- !u!114 &6005612611525310229
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4475814382787626003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 539372ea9e8e7d940b2a6be5a0fc3d4b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHuntersAR.Enemies.EnemyMovement
+  speed: 0.25
+  attackDistance: 0.65
+  damage: 34
+  attackCooldown: 2
 --- !u!1 &7508173272658951731
 GameObject:
   m_ObjectHideFlags: 0

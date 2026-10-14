@@ -6,6 +6,7 @@ namespace RiftHuntersAR.Game
     {
         public int Score { get; private set; }
         public event Action<int> Changed;
+        public void ResetScore() { Score=0; Changed?.Invoke(Score); }
         public void AddEnemyScore() { Score += 100; Changed?.Invoke(Score); }
     }
 }
