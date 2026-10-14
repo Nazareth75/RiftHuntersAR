@@ -46,6 +46,8 @@ namespace RiftHuntersAR.Integration.Editor
                 if (command == "create") Create();
                 else if (command == "build") Build();
                 else if (command == "test") CombatTest();
+                else if (command == "playtest-tests") PlaytestTests();
+                else if (command == "configure-playtest") ConfigurePlaytest();
                 else if (command == "anchor") ConfigureAnchor();
                 else if (command == "android") EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
                 else throw new Exception("Unknown prototype command");
@@ -251,6 +253,79 @@ namespace RiftHuntersAR.Integration.Editor
             Object.DestroyImmediate(go); Object.DestroyImmediate(scoreObject);
             Debug.Log("[Rift] PASS: four hits, one death, score 100.");
         }
+        private static void ConfigurePlaytest()
+        {
+            string path="Assets/Prefabs/Enemies/EnemyBasicPlaceholder.prefab";
+            var root=PrefabUtility.LoadPrefabContents(path);
+            try { if(root.GetComponent<EnemyMovement>()==null) root.AddComponent<EnemyMovement>(); PrefabUtility.SaveAsPrefabAsset(root,path); }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
+            AssetDatabase.SaveAssets();
+        }
+        [MenuItem("Rift Hunters/Test Playtest")]
+        public static void PlaytestTests()
+        {
+            CombatTest();
+            var prefab=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Enemies/EnemyBasicPlaceholder.prefab");
+            if(new SerializedObject(prefab.GetComponent<EnemyHealth>()).FindProperty("maxHealth").floatValue!=100) throw new Exception("Prefab HP is not 100");
+            if(prefab.GetComponentsInChildren<Collider>().Length!=1) throw new Exception("Unexpected enemy colliders");
+            var scene=EditorSceneManager.GetActiveScene();
+            var controller=Object.FindFirstObjectByType<ARPrototypeController>();
+            var refs=new SerializedObject(controller);
+            var button=(Button)refs.FindProperty("shootButton").objectReferenceValue;
+            if(button.onClick.GetPersistentEventCount()!=0) throw new Exception("Unexpected persistent SHOOT listener");
+            var source=(PlasmaWeapon)refs.FindProperty("weapon").objectReferenceValue;
+            if(new SerializedObject(source).FindProperty("damage").floatValue!=25) throw new Exception("Scene damage not 25");
+            var enemy=Object.Instantiate(prefab).GetComponent<EnemyHealth>();
+            var cameraGo=new GameObject("Test camera");
+            var systemGo=new GameObject("Test weapon");
+            var playerGo=new GameObject("Test player");
+            try
+            {
+                enemy.transform.position=new Vector3(1000,0,1002);
+                typeof(EnemyHealth).GetMethod("Awake",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance).Invoke(enemy,null);
+                var camera=cameraGo.AddComponent<Camera>(); camera.transform.position=new Vector3(1000,.3f,1000);
+                var weapon=systemGo.AddComponent<PlasmaWeapon>(); Set(weapon,"aimCamera",camera); weapon.Ready=true;
+                var fire=typeof(PlasmaWeapon).GetMethod("Fire",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+                int deaths=0; enemy.Died+=_=>deaths++;
+                Physics.SyncTransforms();
+                fire.Invoke(weapon,new object[]{false,0f,0});
+                if(weapon.CurrentAmmo!=30) throw new Exception("Shot consumed while tracking unavailable");
+                for(int i=0;i<4;i++)
+                {
+                    fire.Invoke(weapon,new object[]{true,(float)i,i+1});
+                    fire.Invoke(weapon,new object[]{true,(float)i,i+1});
+                    fire.Invoke(weapon,new object[]{true,i+.05f,i+10});
+                    if(enemy.CurrentHealth!=100-25*(i+1) || weapon.CurrentAmmo!=29-i) throw new Exception("Raycast HP/ammo/duplicate test failed hit "+(i+1));
+                }
+                if(deaths!=1) throw new Exception("Expected one death");
+                for(int i=4;i<35;i++) fire.Invoke(weapon,new object[]{true,(float)i,i+100});
+                if(weapon.CurrentAmmo!=0) throw new Exception("Ammo must stop at zero");
+                weapon.Reload(); if(weapon.CurrentAmmo!=30) throw new Exception("Reload failed");
+                var player=playerGo.AddComponent<PlayerHealth>(); int lost=0; player.Died+=()=>lost++;
+                player.TakeDamage(34); player.TakeDamage(34); if(player.IsDead) throw new Exception("Early player death");
+                player.TakeDamage(34); player.TakeDamage(34); player.Die();
+                if(lost!=1 || player.CurrentHealth!=0) throw new Exception("Player death duplicated");
+                player.Retry(); if(player.CurrentHealth!=100 || player.IsDead) throw new Exception("Retry failed");
+                player.TakeDamage(100); if(lost!=2) throw new Exception("Retry death not reset");
+                player.Retry();
+                var movement=enemy.GetComponent<EnemyMovement>(); movement.Initialize(camera.transform,player);
+                enemy.transform.position=camera.transform.position+new Vector3(0,-.3f,2);
+                var advance=typeof(EnemyMovement).GetMethod("Advance",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
+                var initial=enemy.transform.position;
+                advance.Invoke(movement,new object[]{false,1000f,100f});
+                if(enemy.transform.position!=initial) throw new Exception("Enemy moved without tracking");
+                advance.Invoke(movement,new object[]{true,1000f,100f});
+                var horizontal=enemy.transform.position-camera.transform.position; horizontal.y=0;
+                if(Mathf.Abs(horizontal.magnitude-.65f)>.001f || enemy.transform.position.y!=initial.y) throw new Exception("Enemy crossed camera or changed floor height");
+                advance.Invoke(movement,new object[]{true,1000f,.01f});
+                advance.Invoke(movement,new object[]{true,1000.1f,.01f});
+                if(player.CurrentHealth!=66) throw new Exception("Attack cooldown failed");
+                advance.Invoke(movement,new object[]{true,1002.1f,.01f});
+                if(player.CurrentHealth!=32) throw new Exception("Second attack failed");
+                File.WriteAllText("Temp/RiftPlaytestTests.txt","PASS: actual prefab 100 HP, scene 25 damage, one collider, zero persistent listeners; physics raycast four hits 75/50/25/0; duplicate frame/cooldown rejected; ammo zero/reload; player death and retry; horizontal movement clamp, tracking pause and attack cooldown.");
+            }
+            finally { Object.DestroyImmediate(enemy.gameObject); Object.DestroyImmediate(cameraGo); Object.DestroyImmediate(systemGo); Object.DestroyImmediate(playerGo); }
+        }
         [MenuItem("Rift Hunters/Build Android Prototype")]
         public static void Build()
         {
@@ -271,7 +346,7 @@ namespace RiftHuntersAR.Integration.Editor
             try
             {
                 if(File.Exists(Path.Combine(localSdk,"cmdline-tools/latest/bin/sdkmanager.bat"))) AndroidExternalToolsSettings.sdkRootPath=localSdk;
-                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Prototype.apk",target=BuildTarget.Android,options=BuildOptions.Development});
+                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Playtest.apk",target=BuildTarget.Android,options=BuildOptions.Development});
             }
             finally
             {
@@ -292,7 +367,7 @@ namespace RiftHuntersAR.Integration.Editor
                 string expected = generatedGradle + "/launcher/build/outputs/apk/debug/launcher-debug.apk";
                 Directory.CreateDirectory(Path.GetDirectoryName(expected));
                 File.Copy(shortApk, expected, true);
-                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Prototype.apk", true);
+                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Playtest.apk", true);
                 repaired = outputCopyFailed;
             }
             if (repaired)
