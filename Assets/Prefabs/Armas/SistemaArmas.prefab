@@ -1,0 +1,171 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &9188341298473240290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3889029600328323244}
+  - component: {fileID: 7760006019073975390}
+  - component: {fileID: 6636920627968014074}
+  - component: {fileID: 5984729053514180534}
+  - component: {fileID: 1950817691922878180}
+  - component: {fileID: 9154567646491215621}
+  - component: {fileID: 1146857773967860070}
+  - component: {fileID: 1324388290896907716}
+  m_Layer: 0
+  m_Name: SistemaArmas
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3889029600328323244
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7760006019073975390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd7fb084e470bc949b512312122c1376, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.GestorArmas
+  armas:
+  - {fileID: 6636920627968014074}
+  - {fileID: 5984729053514180534}
+  - {fileID: 1950817691922878180}
+--- !u!114 &6636920627968014074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d4508c79a0a23749a8dd0b944355ca5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.ArmaPlasma
+  camaraApuntado: {fileID: 0}
+  dano: 20
+  intervaloDisparo: 0.25
+  alcance: 30
+  capasImpacto:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  capacidadCargador: 30
+  duracionRecarga: 1.5
+--- !u!114 &5984729053514180534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6137b7a8bfedeaa429d63cf7a409f550, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.ArmaElectrica
+  camaraApuntado: {fileID: 0}
+  dano: 35
+  intervaloDisparo: 0.8
+  alcance: 30
+  capasImpacto:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  capacidadCargador: 8
+  duracionRecarga: 2
+  radioCadena: 2.5
+  maximoObjetivos: 3
+  materialRayo: {fileID: 2100000, guid: c672bfe38338b3a4684172d71aebc67d, type: 2}
+--- !u!114 &1950817691922878180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 54964eb1438bd6440ae2e7c3e2461162, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.ArmaExplosiva
+  camaraApuntado: {fileID: 0}
+  dano: 80
+  intervaloDisparo: 1
+  alcance: 30
+  capasImpacto:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  capacidadCargador: 5
+  duracionRecarga: 2.5
+  radioExplosion: 2
+  danoArea: 40
+  prefabExplosion: {fileID: 0}
+  materialPulso: {fileID: 2100000, guid: a6a0cec1b1ed3bf4eb08a6dc1c0c5aba, type: 2}
+--- !u!114 &9154567646491215621
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7215048871975d4589f6da62ce6e902, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.TrazoDisparo
+  arma: {fileID: 6636920627968014074}
+  materialTrazo: {fileID: 2100000, guid: d1e8b92c7d9618f4abca1a10b4002292, type: 2}
+  duracion: 0.12
+--- !u!114 &1146857773967860070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7215048871975d4589f6da62ce6e902, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.TrazoDisparo
+  arma: {fileID: 5984729053514180534}
+  materialTrazo: {fileID: 2100000, guid: c672bfe38338b3a4684172d71aebc67d, type: 2}
+  duracion: 0.12
+--- !u!114 &1324388290896907716
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9188341298473240290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7215048871975d4589f6da62ce6e902, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.TrazoDisparo
+  arma: {fileID: 1950817691922878180}
+  materialTrazo: {fileID: 2100000, guid: a6a0cec1b1ed3bf4eb08a6dc1c0c5aba, type: 2}
+  duracion: 0.12
