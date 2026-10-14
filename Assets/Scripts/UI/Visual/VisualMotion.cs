@@ -20,7 +20,8 @@ namespace RiftHuntersAR.UI.Visual
             if(faceCamera && Camera.main != null)
             {
                 Vector3 direction = Camera.main.transform.position-transform.position; direction.y=0;
-                if(direction.sqrMagnitude>.001f) transform.rotation=Quaternion.LookRotation(direction);
+                if(direction.sqrMagnitude>.001f)
+                    transform.rotation=Quaternion.RotateTowards(transform.rotation,Quaternion.LookRotation(direction),180f*Time.deltaTime);
             }
             for(int i=0;i<fragments.Length;i++)
             {

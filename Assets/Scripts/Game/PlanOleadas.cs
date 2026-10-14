@@ -16,8 +16,8 @@ namespace RiftHunters.Game
 
     public static class PlanOleadas
     {
-        public const float Intervalo = 0.8f;
-        public const float IntervaloRapido = 0.4f;
+        public const float Intervalo = 1.8f;
+        public const float IntervaloRapido = 1f;
 
         public static GrupoOleada[] De(GameState estado)
         {

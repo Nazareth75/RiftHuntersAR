@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RiftHunters.Combate
@@ -21,6 +22,12 @@ namespace RiftHunters.Combate
         // 0: ataca una vez y desaparece. Mayor que 0: se queda y repite el ataque (jefe).
         private float intervaloAtaque;
         private float siguienteAtaque;
+        // Pausa antes del golpe: el jugador aún puede eliminarlo sin recibir daño.
+        private const float PreparacionAtaque = 0.8f;
+        private const float RadioSeparacion = 0.6f;
+        private static readonly List<Enemigo> enMovimiento = new();
+        private float preparacion;
+        public bool PreparandoAtaque => preparacion > 0f;
         public int Vida { get; private set; }
         public int Puntos => puntos;
         public int VidaMaxima => vidaMaxima;
@@ -50,9 +57,17 @@ namespace RiftHunters.Combate
         }
 
         public void Pausar(bool pausa) => pausado = pausa;
-        private void OnDestroy() => Retirado?.Invoke(this);
+        private void OnDestroy()
+        {
+            enMovimiento.Remove(this);
+            Retirado?.Invoke(this);
+        }
 
-        public void AsignarObjetivo(Transform valor) => objetivo = valor;
+        public void AsignarObjetivo(Transform valor)
+        {
+            objetivo = valor;
+            if (!enMovimiento.Contains(this)) enMovimiento.Add(this);
+        }
 
         private void Update()
         {
@@ -67,14 +82,36 @@ namespace RiftHunters.Combate
                     AtacoJugador?.Invoke(danoAtaque);
                     return;
                 }
+                preparacion += Time.deltaTime;
+                if (preparacion < PreparacionAtaque) return;
                 finalizado = true;
                 // El receptor decide como aplicar vida, escudo o derrota.
                 AtacoJugador?.Invoke(danoAtaque);
                 Destroy(gameObject);
                 return;
             }
-            transform.position = Vector3.MoveTowards(
+            preparacion = 0f;
+            Vector3 siguiente = Vector3.MoveTowards(
                 transform.position, destino, velocidad * Time.deltaTime);
+            transform.position = siguiente + Separacion() * (velocidad * Time.deltaTime);
+        }
+
+        private Vector3 Separacion()
+        {
+            Vector3 empuje = Vector3.zero;
+            foreach (Enemigo otro in enMovimiento)
+            {
+                if (otro == this || otro == null || otro.finalizado) continue;
+                Vector3 diferencia = transform.position - otro.transform.position;
+                diferencia.y = 0f;
+                float distancia = diferencia.magnitude;
+                if (distancia >= RadioSeparacion) continue;
+                Vector3 direccion = distancia > 0.001f
+                    ? diferencia / distancia
+                    : transform.right * (GetInstanceID() > otro.GetInstanceID() ? 1f : -1f);
+                empuje += direccion * (1f - distancia / RadioSeparacion);
+            }
+            return Vector3.ClampMagnitude(empuje, 1f);
         }
 
         public void RecibirDano(int dano)

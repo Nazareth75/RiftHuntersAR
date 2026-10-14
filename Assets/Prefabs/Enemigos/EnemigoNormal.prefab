@@ -50,8 +50,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RiftHunters.Combate.Enemigo
   vidaMaxima: 50
   puntos: 100
-  velocidad: 0.6
-  distanciaAtaque: 0.8
+  velocidad: 0.3
+  distanciaAtaque: 1.2
   danoAtaque: 1
 --- !u!136 &2193094411793507178
 CapsuleCollider:
