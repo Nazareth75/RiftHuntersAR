@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using RiftHuntersAR.Combat;
 using RiftHuntersAR.Game;
 using RiftHuntersAR.Integration;
+using RiftHuntersAR.Audio;
 
 namespace RiftHuntersAR.UI.Visual
 {
@@ -65,10 +66,15 @@ namespace RiftHuntersAR.UI.Visual
         private void Reload() { if (legacyReload != null) legacyReload.onClick.Invoke(); }
         private void Retry()
         {
+            SonidoJuego.Reproducir("ui_confirmar", 0.8f);
             if (controller != null) controller.ReintentarPartida();
             else if (legacyRetry != null) legacyRetry.onClick.Invoke();
         }
-        private void Menu() { SceneManager.LoadScene("MainMenu"); }
+        private void Menu()
+        {
+            SonidoJuego.Reproducir("ui_click", 0.8f);
+            SceneManager.LoadScene("MainMenu");
+        }
         private void Feedback(string text)
         {
             bool hit = text.StartsWith("HIT") || text.StartsWith("ENEMY DESTROYED")
@@ -126,8 +132,10 @@ namespace RiftHuntersAR.UI.Visual
             bool editorSinPlano = status == ARPrototypeController.TextoEditorColocar;
             message.gameObject.SetActive((killed || state == "SCANNING") && !editorSinPlano);
             message.sprite = killed ? killMessage : colocar ? placeMessage : scanMessage;
+            var nucleos = controller != null ? controller.NucleosJefe : null;
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;
+            else if (jefe && state == "WAVE" && nucleos != null) stateValue.text = nucleos.Pista;
             else stateValue.text = "";
             bool finished = state == "GAME_OVER" || state == "VICTORY";
             resultTitle.text = state == "VICTORY" ? "VICTORIA" : "GAME OVER";
@@ -142,7 +150,11 @@ namespace RiftHuntersAR.UI.Visual
                 float fraccion = controller != null ? controller.FraccionJefe : -1f;
                 bool mostrarJefe = jefe && fraccion >= 0f;
                 bossHUD.gameObject.SetActive(mostrarJefe);
-                if (mostrarJefe) bossHUD.Present(fraccion, false, false, false);
+                if (mostrarJefe)
+                {
+                    if (nucleos != null) bossHUD.Present(fraccion, nucleos.IzquierdoVivo, nucleos.CentralExpuesto && nucleos.CentralVivo, nucleos.DerechoVivo);
+                    else bossHUD.Present(fraccion, false, false, false);
+                }
             }
         }
 

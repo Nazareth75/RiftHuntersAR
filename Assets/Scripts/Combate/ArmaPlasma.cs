@@ -14,6 +14,12 @@ namespace RiftHunters.Combate
                 UltimoResultado = "Impacto en escenario";
                 return;
             }
+            if (enemigo.Invulnerable)
+            {
+                enemigo.RecibirDano(dano);
+                UltimoResultado = "Escudo: rompe los nucleos";
+                return;
+            }
             enemigo.RecibirDano(dano);
             UltimoResultado = enemigo.Vida > 0 ? $"Impacto: {enemigo.Vida} HP restantes" : "Enemigo eliminado";
         }
