@@ -24,3 +24,11 @@
 *.jks
 .DS_Store
 Thumbs.db
+/Assets/Resources/PerformanceTestRun*.json*
+/Assets/XR/Temp/
+/Assets/XR/Temp.meta
+/Assets/XR/UserSimulationSettings/
+/Assets/XR/UserSimulationSettings.meta
+
+/.utmp/
+/Assets/XR/Resources/XRSimulationRuntimeSettings.asset*
