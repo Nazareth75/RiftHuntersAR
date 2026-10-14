@@ -59,13 +59,19 @@ namespace RiftHuntersAR.Integration
         public float TiempoPartida => GameManager.Instance != null ? GameManager.Instance.MatchSeconds : 0f;
         public string TextoCuenta => GameManager.Instance != null ? GameManager.Instance.TextoCuenta : "";
         public float FraccionJefe => adaptador != null ? adaptador.FraccionJefe : -1f;
+        public static bool EsComputadora => Application.isEditor || !Application.isMobilePlatform;
+        public bool ModoComputadora => pruebaEscritorio;
+        public bool EnPausa => pausaPrueba;
 
         public void HabilitarPruebaEscritorio()
         {
-#if UNITY_EDITOR
+            if (!EsComputadora || pruebaEscritorio) return;
             pruebaEscritorio = true;
             weapon.HabilitarPruebaEscritorio();
-#endif
+            foreach (Behaviour componente in weapon.AimCamera.GetComponents<Behaviour>())
+                if (componente.GetType().Name == "TrackedPoseDriver") componente.enabled = false;
+            if (FindFirstObjectByType<PruebaIntegradaEscritorio>() == null && GetComponent<ControlesComputadora>() == null)
+                gameObject.AddComponent<ControlesComputadora>().Unir(this);
         }
 
         static bool SeguimientoARReal()
@@ -73,7 +79,6 @@ namespace RiftHuntersAR.Integration
             return ARSession.state == ARSessionState.SessionTracking;
         }
 
-#if UNITY_EDITOR
         bool PulsoColocarSimulado()
         {
             Keyboard teclado = Keyboard.current;
@@ -104,52 +109,51 @@ namespace RiftHuntersAR.Integration
             PortalSpawnPoint portal = Instantiate(portalPrefab, posicion, rotacion, origen.transform);
             ComenzarPartida(portal);
         }
-#endif
 
         public void IniciarPruebaEscritorio(Vector3 posicion)
         {
-#if UNITY_EDITOR
             if (!pruebaEscritorio || placed || portalPrefab == null) return;
             var origen = new GameObject("Origen del portal de prueba");
             origen.transform.position = posicion;
             PortalSpawnPoint portal = Instantiate(portalPrefab, posicion, Quaternion.identity, origen.transform);
             ComenzarPartida(portal);
-#endif
         }
 
         public void CambiarPausaPrueba()
         {
-#if UNITY_EDITOR
-            if (!pruebaEscritorio) return;
+            if (!pruebaEscritorio || !placed) return;
+            if (state == "GAME_OVER" || state == "VICTORY") return;
             pausaPrueba = !pausaPrueba;
-#endif
         }
 
         public void DispararPrueba()
         {
-#if UNITY_EDITOR
             if (pruebaEscritorio && SeguimientoDisponible && state == "WAVE") weapon.Shoot();
-#endif
         }
 
         public void RecargarPrueba()
         {
-#if UNITY_EDITOR
             if (pruebaEscritorio && SeguimientoDisponible) Reload();
-#endif
         }
 
         public void ReintentarPrueba()
         {
-#if UNITY_EDITOR
             if (pruebaEscritorio && (state == "GAME_OVER" || state == "VICTORY")) ReintentarPartida();
-#endif
         }
 
-        public void CambiarArma()
+        public void CambiarArma() => CambiarArma(1);
+
+        public void CambiarArma(int paso)
         {
             if (enlaceCombate == null || enlaceCombate.Armas == null || state != "WAVE" || !SeguimientoDisponible) return;
-            armaIndice = (armaIndice + 1) % 3;
+            armaIndice = ((armaIndice + paso) % 3 + 3) % 3;
+            enlaceCombate.SeleccionarArma(armaIndice);
+        }
+
+        public void SeleccionarArma(int indice)
+        {
+            if (enlaceCombate == null || enlaceCombate.Armas == null || state != "WAVE" || !SeguimientoDisponible) return;
+            armaIndice = Mathf.Clamp(indice, 0, 2);
             enlaceCombate.SeleccionarArma(armaIndice);
         }
 
@@ -377,10 +381,8 @@ namespace RiftHuntersAR.Integration
             if (state == "COUNTDOWN" && !string.IsNullOrEmpty(TextoCuenta))
                 feedbackText.text = TextoCuenta;
 
-#if UNITY_EDITOR
-            if (!SeguimientoARReal())
+            if (EsComputadora && !SeguimientoARReal())
                 HabilitarPruebaEscritorio();
-#endif
             bool tracking = SeguimientoDisponible;
             var armaActual = enlaceCombate != null && enlaceCombate.Armas != null ? enlaceCombate.Armas.Actual : null;
             if (reloadButton != null)
@@ -392,7 +394,7 @@ namespace RiftHuntersAR.Integration
 
             if (!tracking)
             {
-                if (pruebaEscritorio) statusText.text = "PAUSA DE PRUEBA: P PARA REANUDAR";
+                if (pruebaEscritorio) statusText.text = "PAUSA: P O ESC PARA SEGUIR";
                 else statusText.text = ARSession.state == ARSessionState.Unsupported
                     ? "Este teléfono no puede usar realidad aumentada."
                     : TextoEscanear;
@@ -416,7 +418,6 @@ namespace RiftHuntersAR.Integration
                 return;
             }
 
-#if UNITY_EDITOR
             if (!placed && pruebaEscritorio && !SeguimientoARReal())
             {
                 statusText.text = TextoEditorColocar;
@@ -424,7 +425,6 @@ namespace RiftHuntersAR.Integration
                     ColocarPortalSimulado();
                 return;
             }
-#endif
 
             bool hasPlane = false;
             foreach (ARPlane plane in planes.trackables)
