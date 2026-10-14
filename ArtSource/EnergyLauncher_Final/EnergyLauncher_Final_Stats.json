@@ -1,0 +1,34 @@
+{
+  "asset": "EnergyLauncher_Final",
+  "meshes": 7,
+  "triangles": 1180,
+  "vertices": 662,
+  "materials": [
+    "EnemyEnergy",
+    "PlayerEnergy",
+    "TechMetalDark",
+    "TechMetalLight"
+  ],
+  "parts": [
+    "Receiver",
+    "Grip",
+    "Barrel",
+    "EnergyChamber",
+    "Indicator",
+    "Handle",
+    "Stock"
+  ],
+  "dimensions_xyz_m": [
+    0.392875999212265,
+    0.721320778131485,
+    0.41999998688697815
+  ],
+  "height_m": 0.42,
+  "pivot": "ground origin; separate part pivots",
+  "front_blender": "-Y",
+  "fbx_axes": "-Z forward/Y up",
+  "rigged": false,
+  "animated": false,
+  "unity_integration": false,
+  "geometry_checks": "finite vertices, positive area triangles, normalized normals, unit mesh scales"
+}
