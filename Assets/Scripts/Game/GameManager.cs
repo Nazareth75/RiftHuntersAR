@@ -22,6 +22,7 @@ namespace RiftHunters.Game
 
         float matchTime;
         float countdownLeft;
+        float esperaOleada;
         bool cerrando;
         bool enAviso;
         bool invasion;
@@ -30,6 +31,8 @@ namespace RiftHunters.Game
         public float MatchSeconds => matchTime;
         public float CountdownLeft => countdownLeft;
         public string TextoCuenta { get; private set; } = "";
+        public string Anuncio { get; private set; } = "";
+        public bool AnunciandoJefe => State == GameState.Boss && esperaOleada > 0f;
         public int Puntos => puntuacion != null ? puntuacion.Score : 0;
         public float VidaActual => vida != null ? vida.CurrentHealth : 0f;
         public bool EsJefe => State == GameState.Boss;
@@ -82,7 +85,16 @@ namespace RiftHunters.Game
         void Update()
         {
             if (IsRunning) matchTime += Time.deltaTime;
-            if (EsOleada(State)) PedirSiguienteGrupo();
+            if (EsOleada(State))
+            {
+                if (esperaOleada > 0f)
+                {
+                    esperaOleada -= Time.deltaTime;
+                    if (esperaOleada > 0f) return;
+                    Anuncio = "";
+                }
+                PedirSiguienteGrupo();
+            }
             if (State != GameState.Countdown) return;
 
             countdownLeft -= Time.deltaTime;
@@ -167,7 +179,12 @@ namespace RiftHunters.Game
             State = siguiente;
             bool oleada = EsOleada(siguiente);
             bool fin = siguiente == GameState.Victory || siguiente == GameState.GameOver;
-            if (!oleada) pendientes.Clear();
+            if (!oleada)
+            {
+                pendientes.Clear();
+                esperaOleada = 0f;
+                Anuncio = "";
+            }
             if (!oleada && siguiente != GameState.Countdown) TextoCuenta = "";
 
             if (generador != null)
@@ -186,12 +203,13 @@ namespace RiftHunters.Game
             pendientes.Clear();
             GrupoOleada[] grupos = PlanOleadas.De(oleada);
             for (int i = 0; i < grupos.Length; i++) pendientes.Enqueue(grupos[i]);
-            PedirSiguienteGrupo();
+            Anuncio = PlanOleadas.Anuncio(oleada);
+            esperaOleada = PlanOleadas.Espera(oleada);
         }
 
         void PedirSiguienteGrupo()
         {
-            if (pendientes.Count == 0 || generador == null || generador.EstaGenerando) return;
+            if (esperaOleada > 0f || pendientes.Count == 0 || generador == null || generador.EstaGenerando) return;
             GrupoOleada grupo = pendientes.Peek();
             if (!generador.GenerarGrupo(grupo.Tipo, grupo.Cantidad, grupo.Intervalo)) return;
             pendientes.Dequeue();

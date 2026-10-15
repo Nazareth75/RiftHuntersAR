@@ -21,7 +21,7 @@ namespace RiftHuntersAR.UI.Visual
         public Image crosshair, message;
         public Image[] hearts;
         public Sprite crosshairNormal, crosshairHit, heartFull, heartEmpty, heartDamaged;
-        public Sprite scanMessage, placeMessage, killMessage;
+        public Sprite scanMessage, placeMessage, killMessage, bossMessage;
         public Text scoreValue, ammoValue, waveValue, enemyValue, stateValue, resultTitle;
         public Text tiempoValue, detalleFin;
         public GameObject resultPanel;
@@ -32,6 +32,8 @@ namespace RiftHuntersAR.UI.Visual
         private float hitUntil, killUntil, damageUntil;
         private float previousHP = 100;
         private bool preview;
+        private Color? colorGameOver;
+        private static readonly Color ColorVictoria = new(0.35f, 1f, 0.75f);
         private void OnEnable()
         {
             shoot.onClick.AddListener(Shoot); reload.onClick.AddListener(Reload);
@@ -130,26 +132,34 @@ namespace RiftHuntersAR.UI.Visual
             crosshair.sprite = hit ? crosshairHit : crosshairNormal;
             bool colocar = status == ARPrototypeController.TextoColocar;
             bool editorSinPlano = status == ARPrototypeController.TextoEditorColocar;
-            message.gameObject.SetActive((killed || state == "SCANNING") && !editorSinPlano);
-            message.sprite = killed ? killMessage : colocar ? placeMessage : scanMessage;
+            float fraccion = controller != null ? controller.FraccionJefe : -1f;
+            bool mostrarJefe = jefe && fraccion >= 0f;
+            bool avisoJefe = state == "WAVE" && controller != null && controller.AnunciandoJefe && bossMessage != null;
+            // El cartel de eliminado comparte altura con el HUD del jefe; no se muestra mientras el jefe está en pantalla.
+            bool mostrarEliminado = killed && !mostrarJefe;
+            message.gameObject.SetActive((mostrarEliminado || avisoJefe || state == "SCANNING") && !editorSinPlano);
+            message.sprite = avisoJefe ? bossMessage : mostrarEliminado ? killMessage : colocar ? placeMessage : scanMessage;
             var nucleos = controller != null ? controller.NucleosJefe : null;
+            string anuncio = controller != null ? controller.AnuncioOleada : "";
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;
             else if (controller != null && !controller.SeguimientoDisponible && state == "WAVE") stateValue.text = status;
+            else if (state == "WAVE" && !string.IsNullOrEmpty(anuncio)) stateValue.text = anuncio;
             else if (jefe && state == "WAVE" && nucleos != null) stateValue.text = nucleos.Pista;
             else stateValue.text = "";
             bool finished = state == "GAME_OVER" || state == "VICTORY";
-            resultTitle.text = state == "VICTORY" ? "VICTORIA" : "GAME OVER";
+            bool victoria = state == "VICTORY";
+            colorGameOver ??= resultTitle.color;
+            resultTitle.text = victoria ? "VICTORIA" : "GAME OVER";
+            resultTitle.color = victoria ? ColorVictoria : colorGameOver.Value;
             if (detalleFin != null)
             {
                 int derrotados = controller != null ? controller.EnemigosDerrotados : 0;
-                detalleFin.text = $"PUNTOS {points}\nENEMIGOS {derrotados}\nTIEMPO {FormatoTiempo(controller != null ? controller.TiempoPartida : 0f)}";
+                detalleFin.text = $"PUNTOS: {points}\nENEMIGOS: {derrotados}\nTIEMPO: {FormatoTiempo(controller != null ? controller.TiempoPartida : 0f)}";
                 detalleFin.gameObject.SetActive(finished);
             }
             if (bossHUD != null)
             {
-                float fraccion = controller != null ? controller.FraccionJefe : -1f;
-                bool mostrarJefe = jefe && fraccion >= 0f;
                 bossHUD.gameObject.SetActive(mostrarJefe);
                 if (mostrarJefe)
                 {
@@ -161,31 +171,42 @@ namespace RiftHuntersAR.UI.Visual
 
         private void AsegurarTextos()
         {
-            if (tiempoValue == null && scoreValue != null)
-                tiempoValue = CrearTexto(scoreValue, "Tiempo", new Vector2(0f, -80f));
-            if (detalleFin == null && resultTitle != null)
-                detalleFin = CrearTexto(resultTitle, "DetalleFin", new Vector2(0f, -220f));
+            // Junto a los corazones: entre Heart_2 (termina en x=309) y ScorePanel incluso en pantallas 20:9.
+            if (tiempoValue == null && scoreValue != null && resultPanel != null)
+                tiempoValue = BuscarOCrearTexto(resultPanel.transform.parent, "Tiempo", scoreValue,
+                    new Vector2(0f, 1f), new Vector2(415f, -92f), new Vector2(190f, 70f), 40, scoreValue.color);
+            // Entre ResultTitle (y 220..340 del panel) y Retry (y -190..-20): tres líneas sin desbordar.
+            if (detalleFin == null && resultTitle != null && resultPanel != null)
+                detalleFin = BuscarOCrearTexto(resultPanel.transform, "DetalleFin", resultTitle,
+                    new Vector2(0.5f, 1f), new Vector2(0f, -265f), new Vector2(800f, 200f), 46, new Color(0.92f, 0.96f, 1f));
         }
 
-        private static Text CrearTexto(Text origen, string nombre, Vector2 desplazamiento)
+        private static Text BuscarOCrearTexto(Transform padre, string nombre, Text estilo, Vector2 ancla,
+            Vector2 posicion, Vector2 tamano, int tamanoFuente, Color color)
         {
+            Transform existente = padre.Find(nombre);
+            if (existente != null && existente.TryGetComponent(out Text encontrado)) return encontrado;
+
             var go = new GameObject(nombre, typeof(RectTransform));
-            go.transform.SetParent(origen.transform.parent, false);
+            go.transform.SetParent(padre, false);
             var rt = go.GetComponent<RectTransform>();
-            var baseRt = origen.rectTransform;
-            rt.anchorMin = baseRt.anchorMin;
-            rt.anchorMax = baseRt.anchorMax;
-            rt.pivot = baseRt.pivot;
-            rt.sizeDelta = baseRt.sizeDelta;
-            rt.anchoredPosition = baseRt.anchoredPosition + desplazamiento;
+            rt.anchorMin = ancla;
+            rt.anchorMax = ancla;
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = tamano;
+            rt.anchoredPosition = posicion;
             var texto = go.AddComponent<Text>();
-            texto.font = origen.font;
-            texto.fontSize = Mathf.Max(28, origen.fontSize - 8);
+            texto.font = estilo.font;
+            texto.fontSize = tamanoFuente;
+            texto.resizeTextForBestFit = true;
+            texto.resizeTextMinSize = 20;
+            texto.resizeTextMaxSize = tamanoFuente;
+            texto.lineSpacing = 1.1f;
             texto.alignment = TextAnchor.MiddleCenter;
-            texto.color = origen.color;
+            texto.color = color;
             texto.raycastTarget = false;
-            texto.horizontalOverflow = HorizontalWrapMode.Overflow;
-            texto.verticalOverflow = VerticalWrapMode.Overflow;
+            texto.horizontalOverflow = HorizontalWrapMode.Wrap;
+            texto.verticalOverflow = VerticalWrapMode.Truncate;
             return texto;
         }
 
