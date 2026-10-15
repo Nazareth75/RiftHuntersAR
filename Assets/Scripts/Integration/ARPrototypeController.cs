@@ -65,6 +65,8 @@ namespace RiftHuntersAR.Integration
         public int EnemigosDerrotados => enlaceCombate != null ? enlaceCombate.Derrotados : 0;
         public float TiempoPartida => GameManager.Instance != null ? GameManager.Instance.MatchSeconds : 0f;
         public string TextoCuenta => GameManager.Instance != null ? GameManager.Instance.TextoCuenta : "";
+        public string AnuncioOleada => GameManager.Instance != null ? GameManager.Instance.Anuncio : "";
+        public bool AnunciandoJefe => GameManager.Instance != null && GameManager.Instance.AnunciandoJefe;
         public float FraccionJefe => adaptador != null ? adaptador.FraccionJefe : -1f;
         public RiftHunters.Combate.NucleosJefe NucleosJefe => adaptador != null ? adaptador.Nucleos : null;
         public RiftHunters.Combate.GestorArmas Armas => enlaceCombate != null ? enlaceCombate.Armas : null;
@@ -424,6 +426,7 @@ namespace RiftHuntersAR.Integration
                     }
                 }
                 if (state == "COUNTDOWN") statusText.text = TextoCuenta;
+                else if (state == "WAVE" && !string.IsNullOrEmpty(AnuncioOleada)) statusText.text = AnuncioOleada;
                 else if (state == "WAVE") statusText.text = EsJefe
                     ? (NucleosJefe != null ? $"JEFE: {NucleosJefe.Pista}" : "JEFE")
                     : $"OLEADA {wave}/4";

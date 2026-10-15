@@ -381,7 +381,7 @@ namespace RiftHuntersAR.Integration.Editor
             Application.logMessageReceived += log;
             try
             {
-                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{"Assets/Scenes/MainMenu/MainMenu.unity",ScenePath},locationPathName="Builds/Android/RiftHuntersAR_Fase2_Test.apk",target=BuildTarget.Android,options=BuildOptions.Development});
+                report=BuildPipeline.BuildPlayer(new BuildPlayerOptions {scenes=new[]{"Assets/Scenes/MainMenu/MainMenu.unity",ScenePath},locationPathName="Builds/Android/RiftHuntersAR_IntegracionEquipo_Final.apk",target=BuildTarget.Android,options=BuildOptions.Development});
             }
             finally
             {
@@ -401,7 +401,7 @@ namespace RiftHuntersAR.Integration.Editor
                 string expected = generatedGradle + "/launcher/build/outputs/apk/debug/launcher-debug.apk";
                 Directory.CreateDirectory(Path.GetDirectoryName(expected));
                 File.Copy(shortApk, expected, true);
-                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_Fase2_Test.apk", true);
+                File.Copy(shortApk, "Builds/Android/RiftHuntersAR_IntegracionEquipo_Final.apk", true);
                 repaired = outputCopyFailed;
             }
             if (repaired)

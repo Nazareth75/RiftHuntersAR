@@ -17,6 +17,9 @@ namespace RiftHuntersAR.Audio
         private int siguiente;
 
         public static float Volumen { get; set; } = 1f;
+#if UNITY_EDITOR
+        public static event System.Action<string, AudioClip> Reproducido;
+#endif
 
         public static void Reproducir(string nombre, float volumen = 1f, float variacionTono = 0f, float separacionMinima = 0.03f)
         {
@@ -25,6 +28,9 @@ namespace RiftHuntersAR.Audio
             if (ultimaVez.TryGetValue(nombre, out float antes) && Time.unscaledTime - antes < separacionMinima) return;
             ultimaVez[nombre] = Time.unscaledTime;
             Obtener().Tocar(clip, volumen, variacionTono);
+#if UNITY_EDITOR
+            Reproducido?.Invoke(nombre, clip);
+#endif
         }
 
         public static void ReproducirVariante(string prefijo, int cantidad, float volumen = 1f, float variacionTono = 0.05f)

@@ -7,6 +7,7 @@ namespace RiftHunters.Combate
     // Jefe de tres núcleos: primero los dos brazos, después el núcleo central.
     // El cuerpo es invulnerable; el jefe muere al romper el núcleo central.
     [RequireComponent(typeof(Enemigo))]
+    [DefaultExecutionOrder(100)]
     public sealed class NucleosJefe : MonoBehaviour
     {
         private const int VidaBrazo = 100;
@@ -24,6 +25,7 @@ namespace RiftHunters.Combate
             public float escalaBase;
             public float golpeHasta;
             public bool vivo;
+            public Renderer objetivoVisual;
         }
 
         private Enemigo jefe;
@@ -32,6 +34,7 @@ namespace RiftHunters.Combate
         private float siguienteSonidoEscudo;
         private bool centralExpuesto;
         private bool terminado;
+        private Renderer cuerpoVisual;
 
         public bool IzquierdoVivo => izquierdo != null && izquierdo.vivo;
         public bool DerechoVivo => derecho != null && derecho.vivo;
@@ -59,6 +62,11 @@ namespace RiftHunters.Combate
             jefe.ConfigurarAtaqueContinuo(4.5f, 1.4f);
             jefe.Invulnerable = true;
             jefe.ImpactoBloqueado += AlBloquear;
+            if(camara!=null)
+            {
+                var frente=camara.position-transform.position; frente.y=0;
+                if(frente.sqrMagnitude>.001f) transform.rotation=Quaternion.LookRotation(frente,Vector3.up);
+            }
             CrearNucleos();
             SonidoJuego.Reproducir("jefe_aparece", 1f);
         }
@@ -82,7 +90,53 @@ namespace RiftHunters.Combate
             central = CrearNucleo("Nucleo central", new Vector3(0f, alturaPecho, frente + radio * 0.4f), radio * 1.25f, ColorCentral, VidaCentral);
             central.enemigo.Invulnerable = true;
             central.enemigo.ImpactoBloqueado += AlBloquear;
+            AlinearConModelo(izquierdo, "WeakPoint_Left");
+            AlinearConModelo(derecho, "WeakPoint_Right");
+            AlinearConModelo(central, "WeakPoint_Core");
+            foreach(var renderer in GetComponentsInChildren<Renderer>())
+                if(renderer.name=="Body_Mesh") cuerpoVisual=renderer;
+            AjustarColliderCuerpo();
         }
+
+        void AlinearConModelo(Nucleo nucleo, string nombre)
+        {
+            foreach(var renderer in GetComponentsInChildren<Renderer>())
+            {
+                if(renderer.transform.name != nombre && renderer.transform.name != nombre+"_Mesh") continue;
+                nucleo.objetivoVisual=renderer;
+                nucleo.transform.GetComponent<Renderer>().enabled=false;
+                SeguirModelo(nucleo); return;
+            }
+        }
+
+        void SeguirModelo(Nucleo nucleo)
+        {
+            if(nucleo==null || !nucleo.vivo || nucleo.transform==null || nucleo.objetivoVisual==null) return;
+            var bounds=nucleo.objetivoVisual.bounds;
+            nucleo.transform.position=bounds.center;
+            float diametro=Mathf.Max(bounds.size.x,Mathf.Max(bounds.size.y,bounds.size.z))*1.15f;
+            var escala=transform.lossyScale;
+            nucleo.transform.localScale=new Vector3(diametro/Mathf.Abs(escala.x),diametro/Mathf.Abs(escala.y),diametro/Mathf.Abs(escala.z));
+        }
+
+        void AjustarColliderCuerpo()
+        {
+            // The old generic capsule covered the art's arm cores. Keep a shielded
+            // body collider, fitted to the actual torso instead of the whole boss.
+            if(cuerpoVisual==null || izquierdo?.objetivoVisual==null || derecho?.objetivoVisual==null || central?.objetivoVisual==null) return;
+            var capsule=GetComponent<CapsuleCollider>(); if(capsule==null) return;
+            var mesh=cuerpoVisual.GetComponent<MeshFilter>(); if(mesh==null || mesh.sharedMesh==null) return;
+            var source=mesh.sharedMesh.bounds;
+            var local=new Bounds(transform.InverseTransformPoint(cuerpoVisual.transform.TransformPoint(source.center)),Vector3.zero);
+            for(int i=0;i<8;i++)
+            {
+                var corner=source.center+Vector3.Scale(source.extents,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1));
+                local.Encapsulate(transform.InverseTransformPoint(cuerpoVisual.transform.TransformPoint(corner)));
+            }
+            capsule.center=local.center; capsule.height=local.size.y;
+            capsule.radius=Mathf.Max(.05f,Mathf.Min(local.extents.x,Mathf.Min(local.extents.y,local.extents.z)));
+        }
+        void LateUpdate() { AjustarColliderCuerpo(); SeguirModelo(izquierdo); SeguirModelo(derecho); SeguirModelo(central); }
 
         private Bounds LimitesLocales()
         {
@@ -145,6 +199,7 @@ namespace RiftHunters.Combate
         private void AlRomper(Nucleo nucleo)
         {
             nucleo.vivo = false;
+            if(nucleo.objetivoVisual!=null) nucleo.objetivoVisual.enabled=false;
             SonidoJuego.Reproducir("nucleo_roto", 1f, 0.05f);
             if (nucleo == central)
             {

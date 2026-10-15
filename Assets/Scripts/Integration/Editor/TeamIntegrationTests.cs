@@ -28,8 +28,68 @@ namespace RiftHuntersAR.Integration.Editor
         static Enemigo target;
         static int initialAmmo, initialScore, points, shots, gun;
         static double next, phaseStart;
-        static bool sawHit, sawBoss, checkedCores;
+        static bool sawHit, sawBoss, checkedCores, bossPreview;
         static readonly HashSet<int> waves=new();
+        static readonly HashSet<string> models=new();
+        static readonly HashSet<string> announcements=new();
+        static readonly Dictionary<string,int> audio=new();
+        static bool audioBound;
+        static void AudioPlayed(string name, AudioClip clip) { audio[name]=audio.GetValueOrDefault(name)+1; Require(clip!=null && clip.length>0,"Invalid audio "+name); }
+        static void CheckModels()
+        {
+            foreach(var enemy in Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None))
+            {
+                if(enemy.GetComponent<ModeloDeIntegracion>()==null) continue;
+                string expected=enemy.name.StartsWith("EnemigoRapido")?"EnemyFast_Final":enemy.name.StartsWith("EnemigoTanque")?"EnemyTank_Final":enemy.name.StartsWith("EnemigoJefe")?"RiftGuardian_Final":"EnemyBasic_Final";
+                var meshes=enemy.GetComponentsInChildren<MeshFilter>().Where(m=>m.sharedMesh!=null).Select(m=>AssetDatabase.GetAssetPath(m.sharedMesh)).ToArray();
+                Require(meshes.Any(p=>p.EndsWith(expected+".fbx")),"Incorrect live FBX for "+enemy.name);
+                if(models.Add(expected))
+                {
+                    var renderers=enemy.GetComponentsInChildren<MeshRenderer>().Where(r=>r.enabled && r.gameObject.activeInHierarchy).ToArray();
+                    var bounds=renderers[0].bounds; foreach(var r in renderers) bounds.Encapsulate(r.bounds);
+                    Record("PASS live "+enemy.name+" -> "+expected+"; visual bounds="+bounds.size+"; root scale="+enemy.transform.lossyScale+"; collider="+enemy.GetComponent<Collider>().bounds.size);
+                }
+            }
+        }
+        static void CheckWeapon(int index)
+        {
+            var visual=hud.GetComponent<WeaponVisuals>();
+            Require(visual!=null && visual.Views!=null && visual.Views.Count(v=>v.activeSelf)==1 && visual.Views[index].activeSelf,"Weapon model switch incorrect/overlapping");
+            string expected=new[]{"PlasmaBlaster_Final","ElectricCannon_Final","EnergyLauncher_Final"}[index];
+            Require(visual.Views[index].GetComponentsInChildren<MeshFilter>().Any(m=>m.sharedMesh!=null && AssetDatabase.GetAssetPath(m.sharedMesh).EndsWith(expected+".fbx")),"Wrong weapon FBX");
+            var renderers=visual.Views[index].GetComponentsInChildren<MeshRenderer>(); var bounds=renderers[0].bounds;
+            foreach(var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+            var viewport=controller.CamaraJuego.WorldToViewportPoint(bounds.center);
+            Require(viewport.x>0 && viewport.x<1 && viewport.y>0 && viewport.y<1 && viewport.z>controller.CamaraJuego.nearClipPlane,"Weapon outside portrait camera "+expected+" "+viewport);
+            Record("Weapon portrait bounds "+expected+" "+bounds.size+"; viewport center="+viewport);
+            for(int i=0;i<8;i++)
+            {
+                var corner=bounds.center+Vector3.Scale(bounds.extents,new Vector3((i&1)==0?-1:1,(i&2)==0?-1:1,(i&4)==0?-1:1));
+                var p=controller.CamaraJuego.WorldToViewportPoint(corner);
+                Require(p.x>=0 && p.x<=1 && p.y>=0 && p.y<=1 && p.z>controller.CamaraJuego.nearClipPlane,"Weapon cropped or clipped in Portrait "+expected+" "+p);
+            }
+            var safe=ScreenRect((RectTransform)hud.resultPanel.transform.parent);
+            foreach(var button in visual.Selectors)
+            {
+                var rect=ScreenRect(button.GetComponent<RectTransform>());
+                Require(safe.Contains(rect.min) && safe.Contains(rect.max),"Selector outside SafeArea");
+                foreach(var control in new[]{hud.shoot.GetComponent<RectTransform>(),hud.reload.GetComponent<RectTransform>(),hud.bossHUD.GetComponent<RectTransform>(),hud.scoreValue.rectTransform,hud.waveValue.rectTransform,hud.enemyValue.rectTransform})
+                    Require(!rect.Overlaps(ScreenRect(control)),"Selector overlaps essential HUD control "+control.name);
+            }
+            Record("PASS selected "+expected+" exclusively visible; real touch selector connected");
+        }
+        static Rect ScreenRect(RectTransform rt)
+        {
+            var corners=new Vector3[4]; rt.GetWorldCorners(corners); return new Rect(corners[0],corners[2]-corners[0]);
+        }
+        static void CheckResults()
+        {
+            Canvas.ForceUpdateCanvases();
+            var detail=ScreenRect(hud.detalleFin.rectTransform);
+            Require(!detail.Overlaps(ScreenRect(hud.retry.GetComponent<RectTransform>())) && !detail.Overlaps(ScreenRect(hud.mainMenu.GetComponent<RectTransform>())) && !detail.Overlaps(ScreenRect(hud.resultTitle.rectTransform)),"Result text overlaps controls/title");
+            Require(hud.detalleFin.verticalOverflow==VerticalWrapMode.Truncate,"Result text can overflow");
+            Record("PASS result title/details/Retry/MainMenu have separate rectangles");
+        }
         static TeamIntegrationTests() { EditorApplication.update+=Poll; Application.logMessageReceived+=Log; }
         static void Require(bool value,string message) { if(!value) throw new Exception(message); }
         static void Record(string value) { File.AppendAllText("Temp/RiftTeamChecks.txt",value+"\n"); }
@@ -90,13 +150,22 @@ namespace RiftHuntersAR.Integration.Editor
                 {
                     var scene=SceneManager.GetSceneByPath(path); bool loaded=scene.IsValid() && scene.isLoaded;
                     if(!loaded) scene=EditorSceneManager.OpenScene(path,OpenSceneMode.Additive);
-                    foreach(var root in scene.GetRootGameObjects()) foreach(var t in root.GetComponentsInChildren<Transform>(true)) scripts+=GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject);
+                    foreach(var root in scene.GetRootGameObjects())
+                    {
+                        foreach(var t in root.GetComponentsInChildren<Transform>(true)) scripts+=GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(t.gameObject);
+                        foreach(var component in root.GetComponentsInChildren<Component>(true))
+                        {
+                            if(component==null) continue;
+                            var iterator=new SerializedObject(component).GetIterator();
+                            while(iterator.NextVisible(true)) if(iterator.propertyType==SerializedPropertyType.ObjectReference && iterator.objectReferenceInstanceIDValue!=0 && iterator.objectReferenceValue==null) references++;
+                        }
+                    }
                     if(!loaded) EditorSceneManager.CloseScene(scene,true);
                 }
             }
             finally { EditorSceneManager.RestoreSceneManagerSetup(setup); }
-            Require(scripts==0,"Scene missing scripts="+scripts);
-            File.WriteAllText("Temp/RiftTeamAssetCheck.txt","PASS: all scenes open; missing scripts=0; missing serialized prefab references=0; catalog weapon/normal/fast/tank/boss references valid; approved model references and functional colliders preserved.\n");
+            Require(scripts==0 && references==0,"Scene missing scripts="+scripts+", references="+references);
+            File.WriteAllText("Temp/RiftTeamAssetCheck.txt","PASS: all scenes open; missing scripts=0; missing serialized prefab and scene references=0; catalog weapon/normal/fast/tank/boss references valid; approved model references and functional colliders preserved.\n");
         }
         static void Stage(int value) { SessionState.SetInt("RiftTeamStage",value); phaseStart=EditorApplication.timeSinceStartup; }
         static void FreezeEnemies()
@@ -112,6 +181,7 @@ namespace RiftHuntersAR.Integration.Editor
                 int stage=SessionState.GetInt("RiftTeamStage",0);
                 if(stage==0)
                 {
+                    if(!audioBound) { RiftHuntersAR.Audio.SonidoJuego.Reproducido+=AudioPlayed; audioBound=true; audio.Clear(); models.Clear(); announcements.Clear(); }
                     var menu=Object.FindFirstObjectByType<VisualMainMenu>(); if(menu==null || Time.time<.5f) return;
                     var button=menu.transform.Find("SafeArea/Start").GetComponent<Button>(); Require(button.onClick.GetPersistentEventCount()==1,"Menu Start event missing/duplicated");
                     Stage(1); button.onClick.Invoke(); Record("PASS MainMenu Start event loads ARGame"); return;
@@ -135,11 +205,14 @@ namespace RiftHuntersAR.Integration.Editor
                     Stage(2); return;
                 }
                 FreezeEnemies();
+                CheckModels();
+                if(!string.IsNullOrEmpty(controller.AnuncioOleada) && announcements.Add(controller.AnuncioOleada)) Record("PASS announcement: "+controller.AnuncioOleada);
                 if(hud.crosshair.sprite==hud.crosshairHit) sawHit=true;
                 if(stage==2)
                 {
                     if(controller.CurrentState!="WAVE") return;
                     target=Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None).FirstOrDefault(); if(target==null) return;
+                    CheckWeapon(0);
                     Require(target.GetComponentsInChildren<MeshRenderer>().Any(r=>r.enabled && r.gameObject.activeInHierarchy),"Approved enemy model not visible");
                     Require(target.GetComponentsInChildren<RiftHuntersAR.Enemies.EnemyHealth>(true).Length==0,"Duplicate legacy health on new enemy visual");
                     Require(target.GetComponentsInChildren<VisualMotion>().Any(m=>m.faceCamera),"Approved enemy visual does not face the camera independently of logic");
@@ -174,8 +247,22 @@ namespace RiftHuntersAR.Integration.Editor
                     if(now<next) return;
                     if(gun<=2)
                     {
-                        controller.SeleccionarArma(gun); controller.CamaraJuego.transform.rotation=Quaternion.Euler(0,180,0); Physics.SyncTransforms();
+                        hud.GetComponent<WeaponVisuals>().Selectors[gun].onClick.Invoke(); CheckWeapon(gun);
+                        controller.CamaraJuego.transform.rotation=Quaternion.Euler(0,180,0); Physics.SyncTransforms();
+                        var catalog=Resources.Load<CatalogoPartida>("CatalogoPartida");
+                        var victims=new Enemigo[3];
+                        for(int i=0;i<3;i++)
+                        {
+                            victims[i]=Object.Instantiate(catalog.normal,controller.CamaraJuego.transform.position+new Vector3((i-1)*.8f,-1,-3),Quaternion.identity);
+                            victims[i].ConfigurarEstadisticas(200,0,1,0);
+                        }
+                        Physics.SyncTransforms();
                         int ammo=hud.weapon.CurrentAmmo; hud.shoot.onClick.Invoke(); Require(hud.weapon.CurrentAmmo==ammo-1,"Additional weapon not firing");
+                        if(gun==1) Require(victims.All(v=>v.Vida==165),"Electric chain does not damage exactly three victims");
+                        else Require(victims.Count(v=>v.Vida==120)==1 && victims.Count(v=>v.Vida==160)==2,"Energy direct/area damage incorrect");
+                        foreach(var victim in victims) Object.Destroy(victim.gameObject);
+                        Record("PASS real "+hud.weapon.NombreArma+" raycast, chain/area and damage values preserved");
+                        Directory.CreateDirectory("Builds/Validation"); ScreenCapture.CaptureScreenshot("Builds/Validation/Weapon_"+gun+".png");
                         Record("PASS team weapon selection and fire: "+hud.weapon.NombreArma+", magazine="+hud.weapon.MagazineSize); gun++; next=now+.4; return;
                     }
                     controller.Player.TakeDamage(34); Stage(6); next=now+.1; return;
@@ -190,7 +277,13 @@ namespace RiftHuntersAR.Integration.Editor
                 {
                     if(now<next) return;
                     Require(controller.CurrentState=="GAME_OVER" && hud.resultPanel.activeSelf && controller.Player.IsDead,"Team Game Over not connected");
+                    CheckResults(); Require(audio.GetValueOrDefault("Usuario/game_over")==1,"Game Over audio missing or duplicated");
                     Record("PASS PuenteVida/PlayerHealth -> GameManager Game Over -> approved result panel");
+                    Directory.CreateDirectory("Builds/Validation"); ScreenCapture.CaptureScreenshot("Builds/Validation/GameOver.png"); Stage(71); next=now+.4; return;
+                }
+                if(stage==71)
+                {
+                    if(now<next) return;
                     hud.retry.onClick.Invoke(); Stage(8); next=now+.15; return;
                 }
                 if(stage==8)
@@ -199,19 +292,29 @@ namespace RiftHuntersAR.Integration.Editor
                     Require(controller.Player.CurrentHealth==100 && hud.score.Score==0 && hud.weapon.CurrentAmmo==hud.weapon.MagazineSize,"Retry did not reset shared state");
                     Require(controller.CurrentState=="COUNTDOWN" && enlace.EnemigosVivos==0,"Retry duplicates enemies or fails countdown");
                     Record("PASS real Retry button resets health/score/ammo/generator and restarts countdown");
-                    Time.timeScale=5; waves.Clear(); sawBoss=false; checkedCores=false; Stage(9); return;
+                    controller.CamaraJuego.transform.rotation=Quaternion.identity;
+                    Time.timeScale=5; waves.Clear(); sawBoss=false; checkedCores=false; bossPreview=false; Stage(9); return;
                 }
                 if(stage==9)
                 {
                     if(controller.CurrentWave>0) waves.Add(controller.CurrentWave);
                     if(controller.EsJefe) { sawBoss=true; if(enlace.EnemigosVivos>0) Require(hud.bossHUD.gameObject.activeSelf,"Boss health HUD not connected"); }
                     var cores=controller.NucleosJefe;
+                    if(cores!=null && !bossPreview) { bossPreview=true; ScreenCapture.CaptureScreenshot("Builds/Validation/Boss.png"); next=now+.4; return; }
+                    if(cores!=null && now<next) return;
                     if(cores!=null && !checkedCores)
                     {
                         var boss=cores.GetComponent<Enemigo>();
                         var left=cores.transform.Find("Nucleo brazo izquierdo").GetComponent<Enemigo>();
                         var right=cores.transform.Find("Nucleo brazo derecho").GetComponent<Enemigo>();
                         var center=cores.transform.Find("Nucleo central").GetComponent<Enemigo>();
+                        foreach(var pair in new[]{(left,"WeakPoint_Left"),(right,"WeakPoint_Right"),(center,"WeakPoint_Core")})
+                        {
+                            var mesh=cores.GetComponentsInChildren<Renderer>().FirstOrDefault(r=>r.name==pair.Item2 || r.name==pair.Item2+"_Mesh");
+                            Require(mesh!=null && Vector3.Distance(pair.Item1.transform.position,mesh.bounds.center)<.05f,"Functional weak point not aligned "+pair.Item2+" mesh="+(mesh!=null?mesh.bounds.center.ToString():"NULL")+" functional="+pair.Item1.transform.position+" renderers="+string.Join(",",cores.GetComponentsInChildren<Renderer>().Select(r=>r.name)));
+                        }
+                        Physics.SyncTransforms();
+                        foreach(var nucleus in new[]{left,right,center}) { var ray=new Ray(controller.CamaraJuego.transform.position,nucleus.transform.position-controller.CamaraJuego.transform.position); Require(Physics.Raycast(ray,out var hit,30) && hit.collider.GetComponentInParent<Enemigo>()==nucleus,"Boss weak point blocked by collider: "+nucleus.name+" hit="+(hit.collider!=null?hit.collider.name:"none")); }
                         int hp=boss.Vida, coreHp=center.Vida;
                         boss.RecibirDano(9999); center.RecibirDano(9999);
                         Require(boss.Vida==hp && center.Vida==coreHp && !cores.CentralExpuesto,"Boss shields not preserved");
@@ -229,8 +332,18 @@ namespace RiftHuntersAR.Integration.Editor
                     foreach(var enemy in Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None)) if(enemy.Vida>0 && enemy.GetComponentInParent<NucleosJefe>()==null) enemy.RecibirDano(enemy.VidaMaxima);
                     if(controller.CurrentState!="VICTORY") return;
                     Require(waves.SetEquals(new[]{1,2,3,4}) && sawBoss && checkedCores,"Team wave/boss progression missing");
+                    Require(models.SetEquals(new[]{"EnemyBasic_Final","EnemyFast_Final","EnemyTank_Final","RiftGuardian_Final"}),"Not all four live enemy FBXs tested");
+                    Require(announcements.Count==5 && hud.bossMessage!=null,"Wave/boss announcement missing");
+                    foreach(var sound in new[]{"plasma","electrica","energia","enemigo","next_level","game_over"}) Require(audio.GetValueOrDefault("Usuario/"+sound)>0,"Audio action not tested "+sound);
+                    Record("PASS six imported user sounds reached actual playback; next-level="+audio.GetValueOrDefault("Usuario/next_level"));
+                    CheckResults();
                     Require(hud.score.Score>0 && hud.resultPanel.activeSelf && enlace.EnemigosVivos==0,"Victory score/result/counter wrong");
                     Record("PASS four team waves and boss reach Victory; score/counter and approved boss/result HUD work");
+                    ScreenCapture.CaptureScreenshot("Builds/Validation/Victory.png"); Stage(91); next=now+.4; return;
+                }
+                if(stage==91)
+                {
+                    if(now<next) return;
                     Time.timeScale=1; hud.mainMenu.onClick.Invoke(); Stage(10); return;
                 }
                 if(stage==10)

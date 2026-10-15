@@ -52,14 +52,14 @@ namespace RiftHuntersAR.Integration
             switch (arma)
             {
                 case ArmaElectrica:
-                    SonidoJuego.ReproducirVariante("disparo_electrica", 2, 0.75f, 0.05f);
+                    SonidoJuego.Reproducir("Usuario/electrica", 0.65f, 0.03f, 0f);
                     break;
                 case ArmaExplosiva:
-                    SonidoJuego.Reproducir("disparo_explosiva", 0.7f, 0.04f, 0f);
+                    SonidoJuego.Reproducir("Usuario/energia", 0.7f, 0.04f, 0f);
                     Invoke(nameof(SonarExplosion), 0.12f);
                     break;
                 default:
-                    SonidoJuego.ReproducirVariante("disparo_plasma", 3, 0.55f, 0.06f);
+                    SonidoJuego.Reproducir("Usuario/plasma", 0.55f, 0.04f, 0f);
                     break;
             }
         }
@@ -78,7 +78,7 @@ namespace RiftHuntersAR.Integration
             {
                 if (enemigo != null && enemigo.Vida > 0) SonidoJuego.ReproducirVariante("impacto", 3, 0.55f, 0.1f);
             };
-            enemigo.Murio += _ => SonidoJuego.ReproducirVariante("muerte_enemigo", 2, 0.8f, 0.08f);
+            enemigo.Murio += _ => { if(enemigo.GetComponent<NucleosJefe>()==null) SonidoJuego.Reproducir("Usuario/enemigo", 0.55f, 0.05f, 0.25f); };
         }
 
         private void AlRecibirMensaje(string mensaje)
@@ -134,12 +134,12 @@ namespace RiftHuntersAR.Integration
             }
 
             if (estado == "WAVE" && oleada > 1 && oleada != oleadaAnterior)
-                SonidoJuego.Reproducir("invasion", 0.6f);
+                SonidoJuego.Reproducir("Usuario/next_level", 0.65f);
 
             if (estado != estadoAnterior)
             {
                 if (estado == "VICTORY") Invoke(nameof(SonarVictoria), 0.8f);
-                else if (estado == "GAME_OVER") SonidoJuego.Reproducir("game_over", 1f);
+                else if (estado == "GAME_OVER") SonidoJuego.Reproducir("Usuario/game_over", 0.8f);
             }
 
             estadoAnterior = estado;
