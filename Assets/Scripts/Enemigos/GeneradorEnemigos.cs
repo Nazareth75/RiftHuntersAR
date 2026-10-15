@@ -81,8 +81,9 @@ namespace RiftHunters.Combate
                 enemigo.gameObject.SetActive(true);
                 EnemigoGenerado?.Invoke(enemigo);
                 if (!esperandoFinal) yield break;
-                if (i == cantidad - 1) continue;
-                float restante = intervalo;
+                // Parejas cortas y un respiro; conservar la cantidad y el intervalo medio.
+                if (i == cantidad - 1 && cantidad == 1) continue;
+                float restante = i == cantidad - 1 ? .7f : intervalo * (i % 2 == 0 ? .65f : 1.35f);
                 while (restante > 0)
                 {
                     yield return null;

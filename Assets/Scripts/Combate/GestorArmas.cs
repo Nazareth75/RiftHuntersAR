@@ -16,7 +16,17 @@ namespace RiftHunters.Combate
         {
             armas = disponibles;
             seleccionada = 0;
+            ActualizarArmasGuardadas();
             ArmaCambiada?.Invoke();
+        }
+
+        private void Start() => ActualizarArmasGuardadas();
+
+        private void ActualizarArmasGuardadas()
+        {
+            if (armas == null) return;
+            for (int i = 0; i < armas.Length; i++)
+                if (armas[i] != null) armas[i].Guardar(i != seleccionada);
         }
 
         public void AsignarCamara(Camera camara)
@@ -29,9 +39,9 @@ namespace RiftHunters.Combate
         public void SeleccionarArma(int indice)
         {
             if (EstaPausado || armas == null || indice < 0 || indice >= armas.Length || armas[indice] == null) return;
-            // Evita cambiar para saltarse la recarga. Cada arma conserva su cargador.
-            if (Actual != null && Actual.EstaRecargando) return;
+            if (seleccionada == indice) return;
             seleccionada = indice;
+            ActualizarArmasGuardadas();
             ArmaCambiada?.Invoke();
         }
 
@@ -67,6 +77,7 @@ namespace RiftHunters.Combate
             foreach (Arma arma in armas)
                 if (arma != null) arma.ReiniciarArma();
             seleccionada = 0;
+            ActualizarArmasGuardadas();
             ArmaCambiada?.Invoke();
         }
     }

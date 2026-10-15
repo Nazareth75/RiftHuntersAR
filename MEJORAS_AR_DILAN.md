@@ -63,3 +63,18 @@ Esta revisión sustituye los tamaños y restricciones anteriores. El usuario rep
 - Los mensajes de HP por impacto quedan solo en Editor, sin generar ese tráfico de consola en Android.
 
 Validación: compilación C# Editor y Android; comprobación en Unity de los cuatro prefabs reales y portal con las alturas indicadas, base visible y collider apoyados, y tres SphereCollider del jefe. La primera ejecución del comprobador temporal encontró además llamadas Destroy fuera de Play en la limpieza heredada; se corrigieron con retirada segura de componentes, liberación de materiales y omisión de audio/VFX fuera de Play. La comprobación del Editor no es una medición de FPS ni valida el suelo real del teléfono. No se generó otro APK.
+
+## Controles y fluidez — 15 de octubre de 2026
+
+Respaldo previo publicado: a5c5ecc, rama Devmodule/dilan-mejoras.
+
+- BotonDisparoSostenido se conecta al botón existente desde VisualHUD, sin regenerar escenas. Dispara inmediatamente al tocar y mantiene intentos mientras el dedo siga dentro. Cada arma conserva su cadencia. Al soltar, salir, bloquearse el botón o perder foco se cancela; el clic de liberación no añade otra bala. Las invocaciones de onClick por teclado o pruebas siguen disponibles.
+- Arma utiliza primero el raycast exacto. Si no impacta directamente un enemigo, permite una tolerancia física de 3,5 cm y máximo 1,5 grados. Solo considera enemigos vivos y vulnerables, y comprueba línea de visión con otro raycast. No mueve la cámara, no atraviesa colliders y no elige núcleos protegidos como candidatos asistidos. Usa un buffer fijo de 32 impactos, sin listas de búsqueda por disparo.
+- GestorArmas permite seleccionar durante recarga. Guardar un arma congela su tiempo de recarga pendiente y conserva sus balas; volver a seleccionarla reanuda ese tiempo. No se completa la recarga mientras está guardada. El HUD muestra su progreso porcentual. También se habilita el cambio durante recarga en la escena de pruebas de combate.
+- PlasmaWeapon solo emite feedback cuando se consumió una bala. Evita repetir sonido y VFX del disparo anterior durante los intentos bloqueados por la cadencia.
+- Enemigo reduce gradualmente el empuje de separación al acercarse al jugador para que su trayectoria lateral sea más fácil de seguir. No cambia vida, daño ni velocidad.
+- GeneradorEnemigos alterna intervalos de 0,65 y 1,35 veces el intervalo del grupo y deja 0,7 s al terminar grupos de varios enemigos. Conserva los tipos, orden y cantidades del plan: 5/9/10/7 y un Guardian. No se añadieron modelos ni animaciones.
+
+Pruebas realizadas en una copia aislada de Unity usando una escena física real: impacto exacto y cadencia; tolerancia junto al borde; pared que bloquea; exclusión de objetivo protegido; selección durante recarga; conservación del tiempo pendiente y de cargadores 30/8/5; ausencia de feedback duplicado; toque breve, mantener, soltar, salir del botón y botón bloqueado; cantidades de oleadas. Todas pasaron. Compilación C# para Editor y Android correcta. No se generó ni instaló un APK nuevo; falta valorar la comodidad táctil en el teléfono.
+
+Prueba manual recomendada: mantener DISPARAR en lugar de pulsarlo repetidamente; soltar y comprobar que se detiene; rozar el borde de una criatura con la mira; intentar el mismo disparo detrás de un obstáculo con collider; recargar Plasma, cambiar a otra arma y volver para comprobar que retoma su recarga; observar las parejas y el movimiento cuando se acercan.

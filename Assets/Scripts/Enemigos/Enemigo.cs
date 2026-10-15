@@ -101,7 +101,9 @@ namespace RiftHunters.Combate
             preparacion = 0f;
             Vector3 siguiente = Vector3.MoveTowards(
                 transform.position, destino, velocidad * Time.deltaTime);
-            Vector3 posicion = siguiente + Separacion() * (velocidad * Time.deltaTime);
+            // Cerca del jugador prima una trayectoria legible sobre el empuje lateral del grupo.
+            float separacion = Mathf.InverseLerp(distanciaAtaque + .1f, 1.5f, Vector3.Distance(transform.position, destino));
+            Vector3 posicion = siguiente + Separacion() * (velocidad * separacion * Time.deltaTime);
             transform.position = suelo != null ? suelo.Apoyar(posicion) : posicion;
         }
 

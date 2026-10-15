@@ -63,7 +63,7 @@ namespace RiftHuntersAR.UI.Visual
             if(Selectors!=null) foreach(var button in Selectors)
             {
                 button.gameObject.SetActive(hud.controller!=null && hud.controller.CurrentState=="WAVE");
-                button.interactable=usable && !manager.Actual.EstaRecargando;
+                button.interactable=usable;
             }
         }
         public void Refresh()

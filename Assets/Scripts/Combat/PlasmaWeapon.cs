@@ -63,7 +63,9 @@ namespace RiftHuntersAR.Combat
                 if (lastShotFrame == frame) return;
                 int municionAnterior = CurrentAmmo;
                 sistemaCombate.Disparar();
-                if (CurrentAmmo != municionAnterior) lastShotFrame = frame;
+                // Un intento durante la cadencia no debe repetir audio/VFX del último impacto.
+                if (CurrentAmmo == municionAnterior) return;
+                lastShotFrame = frame;
                 Feedback?.Invoke(sistemaCombate.Actual.UltimoResultado);
                 return;
             }
