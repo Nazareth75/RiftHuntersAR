@@ -26,6 +26,8 @@ namespace RiftHunters.Combate
             public float golpeHasta;
             public bool vivo;
             public Renderer objetivoVisual;
+            public int cantidadMateriales;
+            public readonly MaterialPropertyBlock propiedades = new();
         }
 
         private Enemigo jefe;
@@ -58,8 +60,8 @@ namespace RiftHunters.Combate
         {
             camara = camaraJugador;
             jefe = GetComponent<Enemigo>();
-            jefe.ConfigurarEstadisticas(jefe.VidaMaxima, 0.35f, 1, jefe.Puntos);
-            jefe.ConfigurarAtaqueContinuo(4.5f, 1.4f);
+            jefe.ConfigurarEstadisticas(jefe.VidaMaxima, 0.10f, 1, jefe.Puntos);
+            jefe.ConfigurarAtaqueContinuo(4.5f, .75f);
             jefe.Invulnerable = true;
             jefe.ImpactoBloqueado += AlBloquear;
             if(camara!=null)
@@ -104,6 +106,7 @@ namespace RiftHunters.Combate
             {
                 if(renderer.transform.name != nombre && renderer.transform.name != nombre+"_Mesh") continue;
                 nucleo.objetivoVisual=renderer;
+                nucleo.cantidadMateriales = renderer.sharedMaterials.Length;
                 nucleo.transform.GetComponent<Renderer>().enabled=false;
                 SeguirModelo(nucleo); return;
             }
@@ -114,7 +117,9 @@ namespace RiftHunters.Combate
             if(nucleo==null || !nucleo.vivo || nucleo.transform==null || nucleo.objetivoVisual==null) return;
             var bounds=nucleo.objetivoVisual.bounds;
             nucleo.transform.position=bounds.center;
-            float diametro=Mathf.Max(bounds.size.x,Mathf.Max(bounds.size.y,bounds.size.z))*1.15f;
+            // Un mínimo físico facilita apuntar con el teléfono al jefe de 80 cm.
+            float diametro=Mathf.Max(nucleo == central ? .15f : .12f,
+                Mathf.Max(bounds.size.x,Mathf.Max(bounds.size.y,bounds.size.z))*1.3f);
             var escala=transform.lossyScale;
             nucleo.transform.localScale=new Vector3(diametro/Mathf.Abs(escala.x),diametro/Mathf.Abs(escala.y),diametro/Mathf.Abs(escala.z));
         }
@@ -136,7 +141,16 @@ namespace RiftHunters.Combate
             capsule.center=local.center; capsule.height=local.size.y;
             capsule.radius=Mathf.Max(.05f,Mathf.Min(local.extents.x,Mathf.Min(local.extents.y,local.extents.z)));
         }
-        void LateUpdate() { AjustarColliderCuerpo(); SeguirModelo(izquierdo); SeguirModelo(derecho); SeguirModelo(central); }
+        private float siguienteAjuste;
+        void LateUpdate()
+        {
+            Animar(izquierdo, 6f);
+            Animar(derecho, 6f);
+            Animar(central, centralExpuesto ? 9f : 2f);
+            if (Time.unscaledTime < siguienteAjuste) return;
+            siguienteAjuste = Time.unscaledTime + .1f;
+            SeguirModelo(izquierdo); SeguirModelo(derecho); SeguirModelo(central);
+        }
 
         private Bounds LimitesLocales()
         {
@@ -242,9 +256,6 @@ namespace RiftHunters.Combate
                     transform.rotation = Quaternion.Slerp(transform.rotation,
                         Quaternion.LookRotation(haciaJugador.normalized, Vector3.up), Time.deltaTime * 3f);
             }
-            Animar(izquierdo, 6f);
-            Animar(derecho, 6f);
-            Animar(central, centralExpuesto ? 9f : 2f);
         }
 
         private void Animar(Nucleo nucleo, float velocidad)
@@ -252,11 +263,23 @@ namespace RiftHunters.Combate
             if (nucleo == null || !nucleo.vivo || nucleo.transform == null) return;
             bool golpe = Time.time < nucleo.golpeHasta;
             float pulso = 1f + Mathf.Sin(Time.time * velocidad) * 0.08f;
-            nucleo.transform.localScale = Vector3.one * nucleo.escalaBase * (golpe ? 1.2f : pulso);
+            if (nucleo.objetivoVisual == null) nucleo.transform.localScale = Vector3.one * nucleo.escalaBase * (golpe ? 1.2f : pulso);
             Color color = golpe ? Color.white
                 : nucleo == central && !centralExpuesto ? ColorProtegido
                 : nucleo.color * (0.85f + 0.15f * Mathf.Sin(Time.time * velocidad));
             Pintar(nucleo.material, color);
+            if (nucleo.objetivoVisual != null)
+            {
+                // Aplicar por material: los pulsos de energía usan bloques por índice.
+                for (int i = 0; i < nucleo.cantidadMateriales; i++)
+                {
+                    nucleo.objetivoVisual.GetPropertyBlock(nucleo.propiedades, i);
+                    nucleo.propiedades.SetColor("_BaseColor", color);
+                    nucleo.propiedades.SetColor("_Color", color);
+                    nucleo.propiedades.SetColor("_EmissionColor", color);
+                    nucleo.objetivoVisual.SetPropertyBlock(nucleo.propiedades, i);
+                }
+            }
         }
 
         private void OnDestroy()
@@ -269,7 +292,9 @@ namespace RiftHunters.Combate
 
         private static void DestroyMaterial(Nucleo nucleo)
         {
-            if (nucleo != null && nucleo.material != null) Destroy(nucleo.material);
+            if (nucleo == null || nucleo.material == null) return;
+            if (Application.isPlaying) Destroy(nucleo.material);
+            else DestroyImmediate(nucleo.material);
         }
     }
 }

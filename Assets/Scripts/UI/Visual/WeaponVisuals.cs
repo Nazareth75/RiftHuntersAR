@@ -19,6 +19,7 @@ namespace RiftHuntersAR.UI.Visual
         Arma selected;
         void Start()
         {
+            viewRoot.localScale *= .75f;
             Views = new GameObject[3]; Views[0] = plasmaView;
             for (int i=1;i<3;i++)
             {

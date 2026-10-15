@@ -148,6 +148,8 @@ namespace RiftHuntersAR.UI.Visual
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;
             else if (controller != null && !controller.SeguimientoDisponible && state == "WAVE") stateValue.text = status;
+            else if (state == "WAVE" && controller != null && controller.Generador != null && controller.Generador.EsperandoDistancia)
+                stateValue.text = "Aléjate un poco del portal para que salgan los enemigos.";
             else if (state == "WAVE" && !string.IsNullOrEmpty(anuncio)) stateValue.text = anuncio;
             else if (jefe && state == "WAVE" && nucleos != null) stateValue.text = nucleos.Pista;
             else stateValue.text = "";

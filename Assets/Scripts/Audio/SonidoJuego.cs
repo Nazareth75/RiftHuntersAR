@@ -23,6 +23,7 @@ namespace RiftHuntersAR.Audio
 
         public static void Reproducir(string nombre, float volumen = 1f, float variacionTono = 0f, float separacionMinima = 0.03f)
         {
+            if (!Application.isPlaying) return;
             AudioClip clip = Cargar(nombre);
             if (clip == null) return;
             if (ultimaVez.TryGetValue(nombre, out float antes) && Time.unscaledTime - antes < separacionMinima) return;

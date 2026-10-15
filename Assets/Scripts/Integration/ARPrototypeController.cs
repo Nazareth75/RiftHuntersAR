@@ -29,12 +29,15 @@ namespace RiftHuntersAR.Integration
         [SerializeField] private Text scoreText;
         [SerializeField] private Text feedbackText;
         [SerializeField] private Button shootButton;
-        private readonly List<ARRaycastHit> hits = new();
         private readonly List<RaycastResult> uiHits = new();
         private bool placed;
         private PlayerHealth player;
         private PortalSpawnPoint activePortal;
         private ARAnchor activeAnchor;
+        private ColocacionPortalAR colocacion;
+        private float seguimientoEstable;
+        private bool SeguimientoFisico => ARSession.state == ARSessionState.SessionTracking
+            && (!placed || (activeAnchor != null && activeAnchor.trackingState == TrackingState.Tracking));
         private float tiempoSinSeguimiento;
         private const float RetardoMensajePerdida = 0.5f;
 
@@ -50,12 +53,10 @@ namespace RiftHuntersAR.Integration
         private bool pausaPrueba;
         private AdaptadorGenerador adaptador;
         private bool ganchosListos;
-        private bool AnclaDisponible => activeAnchor == null
-        || activeAnchor.trackingState != TrackingState.None;
 
         public bool SeguimientoDisponible => !aplicacionPausada && !pausaPrueba
             && (pruebaEscritorio
-                || (ARSession.state == ARSessionState.SessionTracking && AnclaDisponible));
+                || (SeguimientoFisico && seguimientoEstable >= .2f));
         public Camera CamaraJuego => weapon.AimCamera;
         public PlayerHealth Player => player;
         public string CurrentState => state;
@@ -182,6 +183,8 @@ namespace RiftHuntersAR.Integration
             player = gameObject.AddComponent<PlayerHealth>();
             player.Changed += PlayerChanged;
             PrepararCombate();
+            colocacion = gameObject.AddComponent<ColocacionPortalAR>();
+            colocacion.Configurar(planes, raycasts, weapon.AimCamera);
             var parent = statusText.transform.parent;
             playerText = MakeLabel(parent, "Player", new Vector2(0, -280), new Vector2(.5f, 1));
             ammoText = MakeLabel(parent, "Ammo", new Vector2(0, 450), new Vector2(.5f, 0));
@@ -291,7 +294,12 @@ namespace RiftHuntersAR.Integration
             return button;
         }
 
-        private void OnApplicationPause(bool pausa) => aplicacionPausada = pausa;
+        private void OnApplicationPause(bool pausa)
+        {
+            aplicacionPausada = pausa;
+            seguimientoEstable = 0f;
+            if (pausa && enlaceCombate != null) enlaceCombate.Pausar(true);
+        }
 
         private void PlayerChanged()
         {
@@ -372,7 +380,12 @@ namespace RiftHuntersAR.Integration
             return uiHits.Count > 0;
         }
 
-        private void Update() => RefrescarPresentacion();
+        private void Update()
+        {
+            seguimientoEstable = SeguimientoFisico && !aplicacionPausada
+                ? seguimientoEstable + Time.unscaledDeltaTime : 0f;
+            RefrescarPresentacion();
+        }
 
         private void LateUpdate()
         {
@@ -409,6 +422,7 @@ namespace RiftHuntersAR.Integration
             if (!tracking)
             {
                 tiempoSinSeguimiento += Time.unscaledDeltaTime;
+                colocacion.Ocultar();
                 if (pruebaEscritorio) { statusText.text = "PAUSA: P O ESC PARA SEGUIR"; return; }
                 if (!placed || tiempoSinSeguimiento >= RetardoMensajePerdida)
                     statusText.text = MensajeSinSeguimiento();
@@ -417,14 +431,6 @@ namespace RiftHuntersAR.Integration
             tiempoSinSeguimiento = 0f;
             if (placed)
             {
-                if (planes != null)
-                {
-                    foreach (ARPlane plane in planes.trackables)
-                    {
-                        var renderer = plane.GetComponent<MeshRenderer>();
-                        if (renderer != null) renderer.enabled = false;
-                    }
-                }
                 if (state == "COUNTDOWN") statusText.text = TextoCuenta;
                 else if (state == "WAVE" && !string.IsNullOrEmpty(AnuncioOleada)) statusText.text = AnuncioOleada;
                 else if (state == "WAVE") statusText.text = EsJefe
@@ -443,31 +449,34 @@ namespace RiftHuntersAR.Integration
                 return;
             }
 
-            bool hasPlane = false;
-            foreach (ARPlane plane in planes.trackables)
-                if (plane.trackingState == TrackingState.Tracking) { hasPlane = true; break; }
-            statusText.text = hasPlane ? TextoColocar : TextoEscanear;
+            colocacion.Actualizar(tracking);
+            statusText.text = colocacion.Mensaje;
             if (!TouchPosition(out Vector2 position) || OverUI(position)) return;
-            if (!raycasts.Raycast(position, hits, TrackableType.PlaneWithinPolygon)) return;
-            ARPlane selected = planes.GetPlane(hits[0].trackableId);
-            if (selected == null || selected.trackingState != TrackingState.Tracking) return;
-            Pose pose = hits[0].pose;
+            if (!colocacion.PuedeColocar) return;
+            ARPlane selected = colocacion.Plano;
+            Pose pose = colocacion.Pose;
             ARAnchor anchor = anchors.AttachAnchor(selected, pose);
-            if (anchor == null) { UpdateFeedback("PLACEMENT FAILED: TAP AGAIN"); return; }
+            if (anchor == null) { UpdateFeedback("No se pudo anclar: vuelve a tocar."); return; }
             activeAnchor = anchor;
-            PortalSpawnPoint portal = Instantiate(portalPrefab, pose.position, pose.rotation, anchor.transform);
+            anchor.gameObject.AddComponent<SueloCombateAR>().Configurar(selected);
+            // Vertical y mirando al jugador; no heredar la orientación arbitraria del plano.
+            Vector3 frente = weapon.AimCamera.transform.position - pose.position;
+            frente.y = 0f;
+            Quaternion orientacion = frente.sqrMagnitude > .001f ? Quaternion.LookRotation(frente) : Quaternion.identity;
+            PortalSpawnPoint portal = Instantiate(portalPrefab, pose.position, orientacion, anchor.transform);
+            colocacion.Ocultar();
             foreach (ARPlane plane in planes.trackables)
             {
                 var renderer = plane.GetComponent<MeshRenderer>();
                 if (renderer != null) renderer.enabled = false;
             }
+            planes.requestedDetectionMode = PlaneDetectionMode.None;
             ComenzarPartida(portal);
         }
         private string MensajeSinSeguimiento()
         {
             if (ARSession.state == ARSessionState.Unsupported) return "AR NOT SUPPORTED";
-            if (!placed) return "SCAN ENVIRONMENT";
-            if (activeAnchor != null && activeAnchor.trackingState == TrackingState.None)
+            if (activeAnchor != null && activeAnchor.trackingState != TrackingState.Tracking)
                 return "PORTAL PERDIDO: MIRA DONDE LO COLOCASTE";
             switch (ARSession.notTrackingReason)
             {
@@ -476,7 +485,7 @@ namespace RiftHuntersAR.Integration
                 case NotTrackingReason.InsufficientFeatures: return "APUNTA A UNA SUPERFICIE CON DETALLES";
                 case NotTrackingReason.Initializing:
                 case NotTrackingReason.Relocalizing: return "RECUPERANDO TRACKING: MIRA TU ENTORNO";
-                default: return "TRACKING PERDIDO: MIRA TU ENTORNO";
+                default: return placed ? "Estabilizando seguimiento: mira el entorno del portal." : TextoEscanear;
             }
         }
         private void CopiarEstado()

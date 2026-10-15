@@ -14,13 +14,14 @@ namespace RiftHunters.Combate
         [UnityEngine.Serialization.FormerlySerializedAs("target")]
         [SerializeField] private Transform objetivo;
         [UnityEngine.Serialization.FormerlySerializedAs("spawnSpacing")]
-        [SerializeField, Min(0)] private float separacionAparicion = 0.7f;
+        [SerializeField, Min(0)] private float separacionAparicion = 0.35f;
         private Transform contenedorEnemigos;
         private Coroutine aparicion;
         private readonly List<Enemigo> generados = new List<Enemigo>();
         private bool esperandoFinal;
         public event Action<Enemigo> EnemigoGenerado;
         public event Action EnemigosAgotados;
+        public bool EsperandoDistancia { get; private set; }
         public bool EstaGenerando => aparicion != null;
         public bool EstaPausado { get; private set; }
         public int EnemigosVivos => generados.Count;
@@ -58,7 +59,22 @@ namespace RiftHunters.Combate
                 while (EstaPausado) yield return null;
                 if (origenGrupo == null || objetivoGrupo == null) break;
                 Vector3 desplazamiento = origenGrupo.right * ((i - (cantidad - 1) * 0.5f) * separacionAparicion);
-                Enemigo enemigo = Instantiate(prefabGrupo, origenGrupo.position + desplazamiento, origenGrupo.rotation, contenedorGrupo);
+                Vector3 posicion = origenGrupo.position + desplazamiento;
+                var suelo = contenedorGrupo != null ? contenedorGrupo.GetComponent<RiftHuntersAR.AR.SueloCombateAR>() : null;
+                if (suelo != null) posicion = suelo.PosicionAparicion(posicion);
+                // Esperar si el jugador se acerca al portal, sin crear enemigos encima.
+                while (suelo != null)
+                {
+                    if (origenGrupo == null || objetivoGrupo == null) { aparicion = null; yield break; }
+                    posicion = suelo.PosicionAparicion(origenGrupo.position + desplazamiento);
+                    Vector3 diferencia = posicion - objetivoGrupo.position;
+                    diferencia.y = 0f;
+                    if (!EstaPausado && diferencia.sqrMagnitude >= .8f * .8f) break;
+                    EsperandoDistancia = true;
+                    yield return null;
+                }
+                EsperandoDistancia = false;
+                Enemigo enemigo = Instantiate(prefabGrupo, posicion, origenGrupo.rotation, contenedorGrupo);
                 enemigo.AsignarObjetivo(objetivoGrupo);
                 generados.Add(enemigo);
                 enemigo.Retirado += AlRetirarEnemigo;
@@ -100,6 +116,7 @@ namespace RiftHunters.Combate
 
         public void Limpiar()
         {
+            EsperandoDistancia = false;
             esperandoFinal = false; // Cancelar no cuenta como completar una oleada.
             if (aparicion != null) StopCoroutine(aparicion);
             aparicion = null;

@@ -17,6 +17,7 @@ namespace RiftHunters.Combate
         [UnityEngine.Serialization.FormerlySerializedAs("attackDamage")]
         [SerializeField, Min(1)] private int danoAtaque = 1;
         private Transform objetivo;
+        private RiftHuntersAR.AR.SueloCombateAR suelo;
         private bool finalizado;
         private bool pausado;
         // 0: ataca una vez y desaparece. Mayor que 0: se queda y repite el ataque (jefe).
@@ -24,7 +25,7 @@ namespace RiftHunters.Combate
         private float siguienteAtaque;
         // Pausa antes del golpe: el jugador aún puede eliminarlo sin recibir daño.
         private const float PreparacionAtaque = 0.8f;
-        private const float RadioSeparacion = 0.6f;
+        private const float RadioSeparacion = 0.3f;
         private static readonly List<Enemigo> enMovimiento = new();
         private float preparacion;
         public bool PreparandoAtaque => preparacion > 0f;
@@ -56,7 +57,13 @@ namespace RiftHunters.Combate
             distanciaAtaque = Mathf.Max(0.1f, distancia);
         }
 
-        public void Pausar(bool pausa) => pausado = pausa;
+        public void Pausar(bool pausa)
+        {
+            if (pausado == pausa) return;
+            pausado = pausa;
+            // Dar un margen al recuperar tracking; no golpear inmediatamente al reanudar.
+            if (!pausa) { preparacion = 0f; siguienteAtaque = Time.time + .8f; }
+        }
         private void OnDestroy()
         {
             enMovimiento.Remove(this);
@@ -66,6 +73,7 @@ namespace RiftHunters.Combate
         public void AsignarObjetivo(Transform valor)
         {
             objetivo = valor;
+            suelo = GetComponentInParent<RiftHuntersAR.AR.SueloCombateAR>();
             if (!enMovimiento.Contains(this)) enMovimiento.Add(this);
         }
 
@@ -93,7 +101,8 @@ namespace RiftHunters.Combate
             preparacion = 0f;
             Vector3 siguiente = Vector3.MoveTowards(
                 transform.position, destino, velocidad * Time.deltaTime);
-            transform.position = siguiente + Separacion() * (velocidad * Time.deltaTime);
+            Vector3 posicion = siguiente + Separacion() * (velocidad * Time.deltaTime);
+            transform.position = suelo != null ? suelo.Apoyar(posicion) : posicion;
         }
 
         private Vector3 Separacion()
@@ -124,7 +133,9 @@ namespace RiftHunters.Combate
             }
             Vida = Mathf.Max(0, Vida - dano);
             VidaCambiada?.Invoke();
+#if UNITY_EDITOR
             Debug.Log($"{name}: {Vida}/{vidaMaxima} HP", this);
+#endif
             if (Vida > 0) return;
             finalizado = true;
             Murio?.Invoke(this);
