@@ -37,3 +37,5 @@ Thumbs.db
 /ArtSource/**/*.blend1
 /ArtSource/**/*.blend2
 /Tools/ArtPipeline/__pycache__/
+/Assets/_Recovery/ 
+/Assets/_Recovery.meta 
