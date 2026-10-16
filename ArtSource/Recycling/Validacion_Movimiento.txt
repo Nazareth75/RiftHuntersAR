@@ -1,0 +1,66 @@
+PASS
+PASS Functional root position untouched 0
+PASS Functional collider unchanged 0
+PASS Live procedural movement on child only 0
+PASS Distinct procedural profile 0
+PASS Hit/shield functionality preserved 0
+PASS Pollution command/Guardian exclusion 0
+PASS Functional root position untouched 1
+PASS Functional collider unchanged 1
+PASS Live procedural movement on child only 1
+PASS Distinct procedural profile 1
+PASS Hit/shield functionality preserved 1
+PASS Pollution command/Guardian exclusion 1
+PASS Functional root position untouched 2
+PASS Functional collider unchanged 2
+PASS Live procedural movement on child only 2
+PASS Distinct procedural profile 2
+PASS Hit/shield functionality preserved 2
+PASS Pollution command/Guardian exclusion 2
+PASS Functional root position untouched 3
+PASS Functional collider unchanged 3
+PASS Live procedural movement on child only 3
+PASS Distinct procedural profile 3
+PASS Hit/shield functionality preserved 3
+PASS Pollution command/Guardian exclusion 3
+PASS Per-enemy waste cap 0 = 1
+PASS No repeated/spam pollution 0
+PASS Pollution never moves functional root 0
+PASS Per-enemy waste cap 1 = 1
+PASS No repeated/spam pollution 1
+PASS Pollution never moves functional root 1
+PASS Per-enemy waste cap 2 = 2
+PASS No repeated/spam pollution 2
+PASS Pollution never moves functional root 2
+PASS Per-enemy waste cap 3 = 0
+PASS No repeated/spam pollution 3
+PASS Pollution never moves functional root 3
+PASS Exactly four emitted residues
+PASS Plastic/Paper/Metal generated
+PASS Residue excluded from default shooting raycasts
+PASS Residue cannot push or damage enemies
+PASS Residue rests on surface, no penetration Metal
+PASS Residue excluded from default shooting raycasts
+PASS Residue cannot push or damage enemies
+PASS Residue rests on surface, no penetration Plastic
+PASS Residue excluded from default shooting raycasts
+PASS Residue cannot push or damage enemies
+PASS Residue rests on surface, no penetration Paper
+PASS Residue excluded from default shooting raycasts
+PASS Residue cannot push or damage enemies
+PASS Residue rests on surface, no penetration Plastic
+PASS Guardian weak points retained
+PASS Floating Guardian collider follows WeakPoint_Left_Mesh
+PASS Floating Guardian collider follows WeakPoint_Right_Mesh
+PASS Floating Guardian collider follows WeakPoint_Core_Mesh
+PASS Guardian sparse contamination aura
+PASS Guardian VFX actually emits live particles
+PASS Death leaves brief visual fall, existing root removal preserved
+PASS Dead functional enemy removed
+PASS Actual enemy windup/attack/damage event and retirement preserved
+PASS Presentation remnants cleaned up
+PASS Functional walking and heavy visual sway coexist
+PASS Actual Tank attack preserves functional retirement
+PASS Actual Guardian attack preserves floating boss/root
+PASS Automatic contamination while moving, no external game manager changes
+PASS Zero runtime errors

@@ -1,0 +1,135 @@
+[
+  {
+    "asset": "PlasticBottle_Final",
+    "triangles": 344,
+    "materials": [
+      "Recycling_Cyan",
+      "Recycling_Plastic"
+    ],
+    "dimensions_blender_m": [
+      0.07604750990867615,
+      0.07575005292892456,
+      0.2750000059604645
+    ],
+    "height_m": 0.2750000059604645,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 23996
+  },
+  {
+    "asset": "MetalCan_Final",
+    "triangles": 480,
+    "materials": [
+      "Recycling_CanRim",
+      "Recycling_RedMetal"
+    ],
+    "dimensions_blender_m": [
+      0.07145781815052032,
+      0.06990711390972137,
+      0.14000000059604645
+    ],
+    "height_m": 0.14000000059604645,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 26764
+  },
+  {
+    "asset": "PaperCardboard_Final",
+    "triangles": 120,
+    "materials": [
+      "Recycling_Cardboard",
+      "Recycling_Paper"
+    ],
+    "dimensions_blender_m": [
+      0.28581368923187256,
+      0.20159903168678284,
+      0.16601604223251343
+    ],
+    "height_m": 0.16601604223251343,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 20380
+  },
+  {
+    "asset": "TrashBag_Final",
+    "triangles": 184,
+    "materials": [
+      "Recycling_Bag",
+      "Recycling_Violet"
+    ],
+    "dimensions_blender_m": [
+      0.23162822425365448,
+      0.24811965227127075,
+      0.36000001430511475
+    ],
+    "height_m": 0.36000001430511475,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 20572
+  },
+  {
+    "asset": "PlasticRecycleStation_Final",
+    "triangles": 864,
+    "materials": [
+      "Recycling_Graphite",
+      "Recycling_PlasticLight"
+    ],
+    "dimensions_blender_m": [
+      0.45500001311302185,
+      0.41749998927116394,
+      0.8199999928474426
+    ],
+    "height_m": 0.8199999928474426,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 35324
+  },
+  {
+    "asset": "PaperRecycleStation_Final",
+    "triangles": 924,
+    "materials": [
+      "Recycling_Graphite.002",
+      "Recycling_PaperLight"
+    ],
+    "dimensions_blender_m": [
+      0.45500001311302185,
+      0.41749998927116394,
+      0.8199999928474426
+    ],
+    "height_m": 0.8199999928474426,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 36412
+  },
+  {
+    "asset": "MetalRecycleStation_Final",
+    "triangles": 1080,
+    "materials": [
+      "Recycling_Graphite.004",
+      "Recycling_MetalLight"
+    ],
+    "dimensions_blender_m": [
+      0.45500001311302185,
+      0.41749998927116394,
+      0.8199999928474426
+    ],
+    "height_m": 0.8199999928474426,
+    "pivot": "ground origin",
+    "mesh_renderers": 1,
+    "transforms_applied": true,
+    "fbx_roundtrip": "PASS",
+    "fbx_bytes": 40092
+  }
+]

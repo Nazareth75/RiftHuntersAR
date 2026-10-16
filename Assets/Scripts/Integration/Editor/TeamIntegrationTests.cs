@@ -39,7 +39,8 @@ namespace RiftHuntersAR.Integration.Editor
         {
             foreach(var enemy in Object.FindObjectsByType<Enemigo>(FindObjectsSortMode.None))
             {
-                if(enemy.GetComponent<ModeloDeIntegracion>()==null) continue;
+                // A defeated enemy can remain until end-of-frame while its visual falls independently.
+                if(enemy.Vida<=0 || enemy.GetComponent<ModeloDeIntegracion>()==null) continue;
                 string expected=enemy.name.StartsWith("EnemigoRapido")?"EnemyFast_Final":enemy.name.StartsWith("EnemigoTanque")?"EnemyTank_Final":enemy.name.StartsWith("EnemigoJefe")?"RiftGuardian_Final":"EnemyBasic_Final";
                 var meshes=enemy.GetComponentsInChildren<MeshFilter>().Where(m=>m.sharedMesh!=null).Select(m=>AssetDatabase.GetAssetPath(m.sharedMesh)).ToArray();
                 Require(meshes.Any(p=>p.EndsWith(expected+".fbx")),"Incorrect live FBX for "+enemy.name);
@@ -300,6 +301,16 @@ namespace RiftHuntersAR.Integration.Editor
                 }
                 if(stage==9)
                 {
+                    var recovery=controller.GetComponent<RiftHuntersAR.Recycling.RecyclingGameplay>();
+                    if(recovery!=null && recovery.Active)
+                    {
+                        if(recovery.InputAvailable && recovery.Items.Count>0)
+                        {
+                            var item=recovery.Items[0];
+                            if(recovery.Select(item)) recovery.Classify(recovery.Stations.First(s=>s.Category==item.Category));
+                        }
+                        return;
+                    }
                     if(controller.CurrentWave>0) waves.Add(controller.CurrentWave);
                     if(controller.EsJefe) { sawBoss=true; if(enlace.EnemigosVivos>0) Require(hud.bossHUD.gameObject.activeSelf,"Boss health HUD not connected"); }
                     var cores=controller.NucleosJefe;

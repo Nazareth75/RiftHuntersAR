@@ -59,7 +59,7 @@ namespace RiftHuntersAR.UI.Visual
             if(manager!=null && selected!=manager.Actual) Refresh();
             bool usable=hud.controller!=null && hud.controller.CurrentState=="WAVE" && manager!=null && !manager.EstaPausado;
             bool finished=hud.controller!=null && (hud.controller.CurrentState=="GAME_OVER" || hud.controller.CurrentState=="VICTORY");
-            viewRoot.gameObject.SetActive(!finished);
+            viewRoot.gameObject.SetActive(!finished && hud.controller!=null && hud.controller.CurrentState!="RECOVERY");
             if(Selectors!=null) foreach(var button in Selectors)
             {
                 button.gameObject.SetActive(hud.controller!=null && hud.controller.CurrentState=="WAVE");

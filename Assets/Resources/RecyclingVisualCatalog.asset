@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e0fad0c4677e0d41937a095b13bb6c3, type: 3}
+  m_Name: RecyclingVisualCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHuntersAR.Recycling.RecyclingVisualCatalog
+  plasticBottle: {fileID: 5308311208861979426, guid: 93c1f7b41d90f4f43bd08ed5fba67b9a, type: 3}
+  metalCan: {fileID: 6269370827941756107, guid: 01294179da9905d4089406cca42b23b6, type: 3}
+  paperCardboard: {fileID: 3866829876353174451, guid: 4b5a75d069a567246892f7ad77a24ded, type: 3}
+  contaminationVFX: {fileID: 6950594531110545898, guid: 088f861ee30aab9499ea66d311a92947, type: 3}
+  plasticStation: {fileID: 7592602081787229463, guid: a2746ca834c682c4d84a1574f7df58e3, type: 3}
+  paperStation: {fileID: 2898932653108462701, guid: 1131cc042d567f94fadc28a9137f2bdd, type: 3}
+  metalStation: {fileID: 4524248319623509315, guid: d8922b24d44300e439066121b4483856, type: 3}

@@ -37,6 +37,7 @@ namespace RiftHunters.Game
         public int Puntos => puntuacion != null ? puntuacion.Score : 0;
         public float VidaActual => vida != null ? vida.CurrentHealth : 0f;
         public bool EsJefe => State == GameState.Boss;
+        public bool RecoveryInProgress { get; private set; }
 
         public int NumeroOleada
         {
@@ -89,6 +90,7 @@ namespace RiftHunters.Game
             // Consultar en cada frame: tampoco avanzan anuncios ni cuenta atrás sin tracking.
             if (controlador != null && !controlador.SeguimientoDisponible) return;
             if (IsRunning) matchTime += Time.deltaTime;
+            if (RecoveryInProgress) return;
             if (EsOleada(State))
             {
                 if (esperaOleada > 0f)
@@ -127,6 +129,8 @@ namespace RiftHunters.Game
             if (State != GameState.Waiting) VolverAlMenu();
 
             ResolverFuentes();
+            RecoveryInProgress = false;
+            GetComponent<IWaveRecovery>()?.CancelRecovery(true);
             if (puntuacion != null) puntuacion.ResetScore();
             if (vida != null) vida.Retry();
 
@@ -141,6 +145,8 @@ namespace RiftHunters.Game
         public void VolverAlMenu()
         {
             cerrando = true;
+            RecoveryInProgress = false;
+            GetComponent<IWaveRecovery>()?.CancelRecovery(true);
             CambiarEstado(GameState.Waiting);
             matchTime = 0f;
             countdownLeft = 0f;
@@ -180,6 +186,11 @@ namespace RiftHunters.Game
 
         void CambiarEstado(GameState siguiente)
         {
+            if (siguiente == GameState.GameOver || siguiente == GameState.Waiting)
+            {
+                RecoveryInProgress = false;
+                GetComponent<IWaveRecovery>()?.CancelRecovery(siguiente == GameState.Waiting);
+            }
             State = siguiente;
             bool oleada = EsOleada(siguiente);
             bool fin = siguiente == GameState.Victory || siguiente == GameState.GameOver;
@@ -221,7 +232,7 @@ namespace RiftHunters.Game
 
         void AlAgotarseEnemigos()
         {
-            if (enAviso || cerrando || !EsOleada(State)) return;
+            if (enAviso || cerrando || RecoveryInProgress || !EsOleada(State)) return;
             enAviso = true;
             if (generador != null && (generador.EstaGenerando || generador.EnemigosVivos > 0))
             {
@@ -236,8 +247,24 @@ namespace RiftHunters.Game
                 return;
             }
 
-            Avanzar();
+            var recovery = GetComponent<IWaveRecovery>();
+            if (recovery != null)
+            {
+                RecoveryInProgress = true;
+                generador?.Pausar(true);
+                GameplayHooks.SolicitarPausa(true);
+                recovery.BeginRecovery(State == GameState.Boss);
+            }
+            else Avanzar();
             enAviso = false;
+        }
+
+        public void CompleteRecovery()
+        {
+            if (!RecoveryInProgress || cerrando || !EsOleada(State) || VidaActual <= 0) return;
+            if (GetComponent<IWaveRecovery>() is IWaveRecovery recovery && !recovery.ReadyToAdvance) return;
+            RecoveryInProgress = false;
+            Avanzar();
         }
 
         void Avanzar()

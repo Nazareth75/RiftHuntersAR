@@ -1,0 +1,8 @@
+PASS PlasticBottle: 344 tris; size=(0.076, 0.275, 0.076); bottom=0; trigger BoxCollider; Ignore Raycast; materials=Recycling_Plastic,Recycling_Cyan
+PASS MetalCan: 480 tris; size=(0.071, 0.140, 0.070); bottom=0; trigger BoxCollider; Ignore Raycast; materials=Recycling_RedMetal,Recycling_CanRim
+PASS PaperCardboard: 120 tris; size=(0.286, 0.166, 0.202); bottom=-1,490116E-08; trigger BoxCollider; Ignore Raycast; materials=Recycling_Paper,Recycling_Cardboard
+PASS TrashBag: 184 tris; size=(0.232, 0.360, 0.248); bottom=-1,490116E-08; trigger BoxCollider; Ignore Raycast; materials=Recycling_Bag,Recycling_Violet
+PASS PlasticRecycleStation: 864 tris; size=(0.455, 0.820, 0.418); bottom=-2,980232E-08; trigger BoxCollider; Ignore Raycast; materials=Recycling_Graphite,Recycling_PlasticLight
+PASS PaperRecycleStation: 924 tris; size=(0.455, 0.820, 0.418); bottom=-2,980232E-08; trigger BoxCollider; Ignore Raycast; materials=Recycling_Graphite,Recycling_PaperLight
+PASS MetalRecycleStation: 1080 tris; size=(0.455, 0.820, 0.418); bottom=-2,980232E-08; trigger BoxCollider; Ignore Raycast; materials=Recycling_Graphite,Recycling_MetalLight
+PASS contamination VFX: max 20 particles; no physics; sparse purple emission. Catalog references valid.

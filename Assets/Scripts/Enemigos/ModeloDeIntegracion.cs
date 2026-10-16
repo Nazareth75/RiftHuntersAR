@@ -64,7 +64,7 @@ namespace RiftHunters.Combate
                 GameObject instancia = Instantiate(modelo, transform);
                 instancia.transform.localPosition = Vector3.zero;
                 instancia.transform.localRotation = Quaternion.identity;
-                // No animar la posición de pies/cuerpo: solo girar el visual sobre el suelo.
+                // La orientación permanece separada del nuevo pivote procedural visual.
                 foreach (VisualMotion movimiento in instancia.GetComponentsInChildren<VisualMotion>())
                     movimiento.animarFragmentos = false;
                 VisualMotion orientacion = instancia.GetComponent<VisualMotion>();
@@ -80,6 +80,8 @@ namespace RiftHunters.Combate
                 for (int i = 0; i < movimientos.Length; i++) Retirar(movimientos[i]);
                 EnemyVisualEffects[] efectos = instancia.GetComponentsInChildren<EnemyVisualEffects>(true);
                 for (int i = 0; i < efectos.Length; i++) Retirar(efectos[i]);
+                if (Application.isPlaying)
+                    RiftHuntersAR.Recycling.EnemyProceduralVisual.Attach(GetComponent<Enemigo>(), instancia, modelo.name, alturaVisual);
             }
 
             if (Application.isPlaying && efectoAparicion != null)

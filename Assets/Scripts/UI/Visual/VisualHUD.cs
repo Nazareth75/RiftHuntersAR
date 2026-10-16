@@ -151,14 +151,14 @@ namespace RiftHuntersAR.UI.Visual
             if (full > hearts.Length) full = hearts.Length;
             for(int i=0;i<hearts.Length;i++) hearts[i].sprite = i < full ? (damaged && i == full-1 ? heartDamaged : heartFull) : heartEmpty;
             crosshair.sprite = hit ? crosshairHit : crosshairNormal;
-            crosshair.gameObject.SetActive(state!="GAME_OVER" && state!="VICTORY");
+            crosshair.gameObject.SetActive(state!="GAME_OVER" && state!="VICTORY" && state!="RECOVERY");
             bool colocar = status == ARPrototypeController.TextoColocar;
             bool editorSinPlano = status == ARPrototypeController.TextoEditorColocar;
             float fraccion = controller != null ? controller.FraccionJefe : -1f;
-            bool mostrarJefe = jefe && fraccion >= 0f;
+            bool mostrarJefe = jefe && state=="WAVE" && fraccion >= 0f;
             bool avisoJefe = state == "WAVE" && controller != null && controller.AnunciandoJefe && bossMessage != null;
             // El cartel de eliminado comparte altura con el HUD del jefe; no se muestra mientras el jefe está en pantalla.
-            bool mostrarEliminado = killed && !mostrarJefe;
+            bool mostrarEliminado = killed && !mostrarJefe && state=="WAVE";
             message.gameObject.SetActive((mostrarEliminado || avisoJefe || state == "SCANNING") && !editorSinPlano);
             message.sprite = avisoJefe ? bossMessage : mostrarEliminado ? killMessage : colocar ? placeMessage : scanMessage;
             var nucleos = controller != null ? controller.NucleosJefe : null;

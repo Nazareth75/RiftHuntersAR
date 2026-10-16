@@ -58,6 +58,7 @@ namespace RiftHuntersAR.Integration
             && (pruebaEscritorio
                 || (SeguimientoFisico && seguimientoEstable >= .2f));
         public Camera CamaraJuego => weapon.AimCamera;
+        public PortalSpawnPoint PortalActivo => activePortal;
         public PlayerHealth Player => player;
         public string CurrentState => state;
         public int CurrentWave => wave;
@@ -216,6 +217,7 @@ namespace RiftHuntersAR.Integration
             PuenteVida vida = gameObject.AddComponent<PuenteVida>();
             vida.Unir(player);
             gameObject.AddComponent<GameManager>();
+            gameObject.AddComponent<RiftHuntersAR.Recycling.RecyclingGameplay>();
             if (!ganchosListos)
             {
                 GameplayHooks.Pausar += AlPedirPausa;
@@ -415,7 +417,7 @@ namespace RiftHuntersAR.Integration
             if (reloadButton != null)
                 reloadButton.interactable = tracking && state == "WAVE" && armaActual != null
                     && !armaActual.EstaRecargando && armaActual.Municion < armaActual.CapacidadCargador;
-            bool puedeDisparar = tracking && weapon.Ready && armaActual != null
+            bool puedeDisparar = tracking && state == "WAVE" && weapon.Ready && armaActual != null
                 && !armaActual.EstaRecargando && weapon.CurrentAmmo > 0;
             shootButton.interactable = puedeDisparar;
 
@@ -492,7 +494,12 @@ namespace RiftHuntersAR.Integration
         {
             GameManager partida = GameManager.Instance;
             if (partida == null || !placed) return;
-            if (partida.State == GameState.Countdown)
+            if (partida.RecoveryInProgress)
+            {
+                state = "RECOVERY";
+                weapon.Ready = false;
+            }
+            else if (partida.State == GameState.Countdown)
             {
                 state = "COUNTDOWN";
                 wave = 0;

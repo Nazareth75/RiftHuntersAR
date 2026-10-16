@@ -1,0 +1,34 @@
+PASS: real combined MainMenu/ARGame playtest; errors=0. Fixture controls positions/speed/time only in Play Mode; no assets changed, no physical AR test, no APK.
+PASS MainMenu Start event loads ARGame
+PASS actual ARGame: one team game manager, shared health/score, approved HUD, initial ammo and hidden legacy canvas
+PASS placement fixture uses real portal with SpawnPoint and approved mesh/VFX; physical AR tracking remains untested
+PASS announcement: OLEADA 1: ENEMIGOS BÁSICOS
+PASS live EnemigoNormal(Clone) -> EnemyBasic_Final; visual bounds=(0.47, 0.28, 0.55); root scale=(1.00, 1.00, 1.00); collider=(0.28, 0.28, 0.28)
+Weapon portrait bounds PlasmaBlaster_Final (0.05, 0.07, 0.12); viewport center=(0.62, 0.24, 0.45)
+PASS selected PlasmaBlaster_Final exclusively visible; real touch selector connected
+PASS countdown reaches Wave1 and spawns team enemy with approved 3D and a single health source
+PASS real HUD shoot button -> team plasma raycast -> damage/death, ammo consumed once, score exactly once
+PASS timed reload and crosshair_hit feedback
+Weapon portrait bounds ElectricCannon_Final (0.06, 0.09, 0.17); viewport center=(0.62, 0.28, 0.45)
+PASS selected ElectricCannon_Final exclusively visible; real touch selector connected
+PASS real Electrica raycast, chain/area and damage values preserved
+PASS team weapon selection and fire: Electrica, magazine=8
+Weapon portrait bounds EnergyLauncher_Final (0.09, 0.09, 0.16); viewport center=(0.62, 0.26, 0.45)
+PASS selected EnergyLauncher_Final exclusively visible; real touch selector connected
+PASS real Explosiva raycast, chain/area and damage values preserved
+PASS team weapon selection and fire: Explosiva, magazine=5
+PASS result title/details/Retry/MainMenu have separate rectangles
+PASS PuenteVida/PlayerHealth -> GameManager Game Over -> approved result panel
+PASS real Retry button resets health/score/ammo/generator and restarts countdown
+PASS announcement: OLEADA 2: ¡LLEGAN LOS RÁPIDOS!
+PASS live EnemigoRapido(Clone) -> EnemyFast_Final; visual bounds=(0.32, 0.24, 0.38); root scale=(1.00, 1.00, 1.00); collider=(0.18, 0.24, 0.18)
+PASS announcement: OLEADA 3: ¡ENJAMBRE MIXTO!
+PASS announcement: OLEADA 4: ¡CUIDADO CON EL TANQUE!
+PASS live EnemigoTanque(Clone) -> EnemyTank_Final; visual bounds=(0.63, 0.42, 0.61); root scale=(1.00, 1.00, 1.00); collider=(0.42, 0.42, 0.42)
+PASS announcement: ¡EL RIFT GUARDIAN SE ACERCA!
+PASS live EnemigoJefe(Clone) -> RiftGuardian_Final; visual bounds=(0.76, 0.81, 0.31); root scale=(1.00, 1.00, 1.00); collider=(0.20, 0.59, 0.20)
+PASS boss body/central shields, left then right arm, exposed central, boss death and score exactly once
+PASS six imported user sounds reached actual playback; next-level=3
+PASS result title/details/Retry/MainMenu have separate rectangles
+PASS four team waves and boss reach Victory; score/counter and approved boss/result HUD work
+PASS return to MainMenu and singleton cleanup

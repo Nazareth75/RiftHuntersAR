@@ -24,6 +24,20 @@ namespace RiftHuntersAR.AR
             local.y = 0f;
             return transform.TransformPoint(local);
         }
+        // Used by environmental props: test complete footprints instead of clamping
+        // each station onto the same boundary point and accidentally overlapping them.
+        public bool Contiene(Vector3 posicion)
+        {
+            if(contorno==null || contorno.Length<3) return true;
+            Vector3 local=transform.InverseTransformPoint(posicion);Vector2 p=new(local.x,local.z);
+            bool inside=false;
+            for(int i=0,j=contorno.Length-1;i<contorno.Length;j=i++)
+            {
+                Vector2 a=contorno[j],b=contorno[i];
+                if((a.y>p.y)!=(b.y>p.y) && p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)inside=!inside;
+            }
+            return inside;
+        }
         public Vector3 PosicionAparicion(Vector3 posicion)
         {
             Vector3 local = transform.InverseTransformPoint(posicion);
