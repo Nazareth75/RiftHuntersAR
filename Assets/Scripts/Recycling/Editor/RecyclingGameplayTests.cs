@@ -89,6 +89,7 @@ namespace RiftHuntersAR.Recycling.Editor
             {
                 File.Delete("Temp/RiftRecoveryReviewFinish.txt");Object.FindFirstObjectByType<RecyclingDesktopReview>()?.FinishCombat();
             }
+            if(!EditorApplication.isPlayingOrWillChangePlaymode){SessionState.SetBool(Flag,false);SessionState.SetBool(Demo,false);}
             if(SessionState.GetBool(Flag,false) || SessionState.GetBool(Demo,false)){Tick();return;}
             if(EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode || !File.Exists("Temp/RiftRecyclingGameplayCommand.txt"))return;
             string value=File.ReadAllText("Temp/RiftRecyclingGameplayCommand.txt").Trim();File.Delete("Temp/RiftRecyclingGameplayCommand.txt");
@@ -131,9 +132,10 @@ namespace RiftHuntersAR.Recycling.Editor
                     if(enemy.GetComponent<EnemyPollutionEmitter>().EmittedCount==0)return;
                     var residue=Object.FindFirstObjectByType<RecyclableItem>();if(residue==null || !residue.IsSettled)return;
                     Check(!flow.Select(residue),"Residues cannot be collected during combat");
-                    controller.Player.TakeDamage(100);stage=2;next=Time.timeAsDouble+.2;return;
+                    Capture("Contamination");stage=11;next=Time.timeAsDouble+.3;return;
                 }
                 if(Time.timeAsDouble<next)return;
+                if(stage==11){controller.Player.TakeDamage(100);stage=2;next=Time.timeAsDouble+.2;return;}
                 if(stage==2)
                 {
                     Check(controller.CurrentState=="GAME_OVER" && hud.resultPanel.activeSelf,"Combat death preserves Game Over");

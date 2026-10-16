@@ -90,6 +90,13 @@ namespace RiftHuntersAR.Integration.Editor
             Require(!detail.Overlaps(ScreenRect(hud.retry.GetComponent<RectTransform>())) && !detail.Overlaps(ScreenRect(hud.mainMenu.GetComponent<RectTransform>())) && !detail.Overlaps(ScreenRect(hud.resultTitle.rectTransform)),"Result text overlaps controls/title");
             Require(hud.detalleFin.verticalOverflow==VerticalWrapMode.Truncate,"Result text can overflow");
             Record("PASS result title/details/Retry/MainMenu have separate rectangles");
+            var end=hud.GetComponent<EndScreenView>();
+            Require(end!=null && end.title!=null && end.title.text==hud.resultTitle.text,"Missing TMP end-screen presentation");
+            Require(end.points.text==hud.score.Score.ToString() && end.enemies.text==controller.EnemigosDerrotados.ToString(),"End-screen statistics are not live values");
+            var blocks=new[]{end.title.rectTransform,end.points.rectTransform,end.enemies.rectTransform,end.elapsed.rectTransform,hud.retry.GetComponent<RectTransform>(),hud.mainMenu.GetComponent<RectTransform>()};
+            var safe=ScreenRect((RectTransform)hud.resultPanel.transform.parent);
+            for(int i=0;i<blocks.Length;i++){var rect=ScreenRect(blocks[i]);Require(safe.Contains(rect.min) && safe.Contains(rect.max),"End-screen outside SafeArea "+blocks[i].name);for(int j=i+1;j<blocks.Length;j++)Require(!rect.Overlaps(ScreenRect(blocks[j])),"Overlapping end-screen blocks");}
+            Record("PASS TMP live values, separate title/statistics/buttons, portrait SafeArea and existing button events");
         }
         static TeamIntegrationTests() { EditorApplication.update+=Poll; Application.logMessageReceived+=Log; }
         static void Require(bool value,string message) { if(!value) throw new Exception(message); }
@@ -102,6 +109,7 @@ namespace RiftHuntersAR.Integration.Editor
         }
         static void Poll()
         {
+            if(SessionState.GetBool(Flag,false) && !EditorApplication.isPlayingOrWillChangePlaymode) SessionState.SetBool(Flag,false);
             if(SessionState.GetBool(Flag,false)) { if(EditorApplication.isPlaying) Tick(); return; }
             if(EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode || !File.Exists("Temp/RiftTeamCommand.txt")) return;
             var command=File.ReadAllText("Temp/RiftTeamCommand.txt").Trim(); File.Delete("Temp/RiftTeamCommand.txt");
@@ -191,7 +199,7 @@ namespace RiftHuntersAR.Integration.Editor
                 {
                     hud=Object.FindFirstObjectByType<VisualHUD>(); if(hud==null || hud.controller.Player==null || Time.time<.5f) return;
                     controller=hud.controller; enlace=controller.GetComponent<EnlaceCombateAR>();
-                    Require(enlace!=null && enlace.Armas!=null && GameManager.Instance!=null,"Team systems not wired to ARGame");
+                    if(enlace==null || enlace.Armas==null || GameManager.Instance==null)return; // Wait until the scene Awake chain has completed; global timeout still detects broken wiring.
                     Require(controller.Player.CurrentHealth==100 && hud.score.Score==0,"Initial health/score wrong");
                     Require(!hud.legacyCanvas.enabled && !hud.legacyCanvas.GetComponent<GraphicRaycaster>().enabled,"Legacy HUD visible or intercepting input");
                     Require(hud.crosshair.sprite==hud.crosshairNormal && hud.hearts.All(h=>h.sprite==hud.heartFull),"Approved HUD sprites missing");

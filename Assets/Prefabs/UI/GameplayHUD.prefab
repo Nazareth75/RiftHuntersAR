@@ -1410,6 +1410,7 @@ GameObject:
   - component: {fileID: 2509538314977684694}
   - component: {fileID: 6092474184403991313}
   - component: {fileID: 8327556532463657651}
+  - component: {fileID: 6704334644367688325}
   m_Layer: 0
   m_Name: GameplayHUD
   m_TagString: Untagged
@@ -1543,11 +1544,46 @@ MonoBehaviour:
   enemyValue: {fileID: 141380975454302646}
   stateValue: {fileID: 1812148916447371429}
   resultTitle: {fileID: 8453708670947313511}
+  tiempoValue: {fileID: 0}
+  detalleFin: {fileID: 0}
   resultPanel: {fileID: 2521389198263776311}
   bossHUD: {fileID: 7720767087172721409}
   muzzle: {fileID: 0}
   plasmaShot: {fileID: 0}
   plasmaHit: {fileID: 0}
+--- !u!114 &6704334644367688325
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3920087979591538074}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e4b948428962b94f914d38c2e6c5287, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiftHuntersAR.UI.Visual.EndScreenView
+  hud: {fileID: 8327556532463657651}
+  gameOverSprites:
+  - {fileID: 21300000, guid: bec9caf052b8fd346a40a11b9b706ce9, type: 3}
+  - {fileID: 21300000, guid: af89217e23e53354c967b346975e5557, type: 3}
+  - {fileID: 21300000, guid: 4936388d5ca39f04eb3241937e95268d, type: 3}
+  - {fileID: 21300000, guid: d04d434ae3204334e958b54b82c9090e, type: 3}
+  - {fileID: 21300000, guid: c4607ec7a9274504c964a45b4ac7b07a, type: 3}
+  - {fileID: 21300000, guid: b294f2cbbea60bc409da256cf8a4e153, type: 3}
+  victorySprites:
+  - {fileID: 21300000, guid: b06bc270c9a4e1c4d9085b7cc8564bcc, type: 3}
+  - {fileID: 21300000, guid: f208949b495ba744086de00cdc04ecfa, type: 3}
+  - {fileID: 21300000, guid: 8f22c4afebc5fd24c91aaa8f07da127b, type: 3}
+  - {fileID: 21300000, guid: f8b15b182ab8ffe428d67dc5e59126ad, type: 3}
+  - {fileID: 21300000, guid: 7d41cbda6a9d6ab428c6bbddc19c86f9, type: 3}
+  - {fileID: 21300000, guid: 7cda3194094ed504b954e0127ad06729, type: 3}
+  font: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  card: {fileID: 0}
+  title: {fileID: 0}
+  points: {fileID: 0}
+  enemies: {fileID: 0}
+  elapsed: {fileID: 0}
 --- !u!1 &4004874556128101965
 GameObject:
   m_ObjectHideFlags: 0
