@@ -26,6 +26,7 @@ namespace RiftHunters.Game
         bool cerrando;
         bool enAviso;
         bool invasion;
+        RiftHuntersAR.Integration.ARPrototypeController controlador;
 
         public GameState State { get; private set; } = GameState.Waiting;
         public float MatchSeconds => matchTime;
@@ -60,6 +61,7 @@ namespace RiftHunters.Game
             }
 
             Instance = this;
+            controlador = GetComponent<RiftHuntersAR.Integration.ARPrototypeController>();
             if (countdownSeconds < 0.5f) countdownSeconds = 3f;
             if (danoPorUnidad < 1) danoPorUnidad = 34;
             ResolverFuentes();
@@ -84,6 +86,8 @@ namespace RiftHunters.Game
 
         void Update()
         {
+            // Consultar en cada frame: tampoco avanzan anuncios ni cuenta atrás sin tracking.
+            if (controlador != null && !controlador.SeguimientoDisponible) return;
             if (IsRunning) matchTime += Time.deltaTime;
             if (EsOleada(State))
             {

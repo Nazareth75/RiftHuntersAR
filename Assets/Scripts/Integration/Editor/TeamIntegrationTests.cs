@@ -217,6 +217,8 @@ namespace RiftHuntersAR.Integration.Editor
                     Require(target.GetComponentsInChildren<RiftHuntersAR.Enemies.EnemyHealth>(true).Length==0,"Duplicate legacy health on new enemy visual");
                     Require(target.GetComponentsInChildren<VisualMotion>().Any(m=>m.faceCamera),"Approved enemy visual does not face the camera independently of logic");
                     target.transform.position=controller.CamaraJuego.transform.position+new Vector3(0,-1,3); Physics.SyncTransforms();
+                    // Aim at the collider after Dilan's physical-size adjustment, not the old 1 m height.
+                    controller.CamaraJuego.transform.LookAt(target.GetComponent<Collider>().bounds.center);
                     initialAmmo=hud.weapon.CurrentAmmo; initialScore=hud.score.Score; points=target.Puntos; shots=0; next=now; Stage(3);
                     Record("PASS countdown reaches Wave1 and spawns team enemy with approved 3D and a single health source"); return;
                 }
@@ -255,6 +257,7 @@ namespace RiftHuntersAR.Integration.Editor
                         {
                             victims[i]=Object.Instantiate(catalog.normal,controller.CamaraJuego.transform.position+new Vector3((i-1)*.8f,-1,-3),Quaternion.identity);
                             victims[i].ConfigurarEstadisticas(200,0,1,0);
+                            victims[i].transform.position+=Vector3.up*(controller.CamaraJuego.transform.position.y-victims[i].GetComponent<Collider>().bounds.center.y);
                         }
                         Physics.SyncTransforms();
                         int ammo=hud.weapon.CurrentAmmo; hud.shoot.onClick.Invoke(); Require(hud.weapon.CurrentAmmo==ammo-1,"Additional weapon not firing");

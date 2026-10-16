@@ -32,6 +32,7 @@ namespace RiftHuntersAR.UI.Visual
         private float hitUntil, killUntil, damageUntil;
         private float previousHP = 100;
         private bool preview;
+        private BotonDisparoSostenido disparoSostenido;
         private Color? colorGameOver;
         private static readonly Color ColorVictoria = new(0.35f, 1f, 0.75f);
         private void OnEnable()
@@ -42,12 +43,16 @@ namespace RiftHuntersAR.UI.Visual
         }
         private void OnDisable()
         {
+            if (disparoSostenido != null) disparoSostenido.Cancelar();
             shoot.onClick.RemoveListener(Shoot); reload.onClick.RemoveListener(Reload);
             retry.onClick.RemoveListener(Retry); mainMenu.onClick.RemoveListener(Menu);
             if (weapon != null) weapon.Feedback -= Feedback;
         }
         private void Start()
         {
+            disparoSostenido = shoot.GetComponent<BotonDisparoSostenido>();
+            if (disparoSostenido == null) disparoSostenido = shoot.gameObject.AddComponent<BotonDisparoSostenido>();
+            disparoSostenido.Configurar(shoot, DispararDesdeBoton);
             ammoValue.resizeTextForBestFit=true;
             ammoValue.resizeTextMinSize=22;
             ammoValue.resizeTextMaxSize=ammoValue.fontSize;
@@ -67,7 +72,17 @@ namespace RiftHuntersAR.UI.Visual
             var raycaster = legacyCanvas.GetComponent<GraphicRaycaster>();
             if (raycaster != null) raycaster.enabled = false;
         }
-        private void Shoot() { if (legacyShoot != null && legacyShoot.interactable) legacyShoot.onClick.Invoke(); }
+        private void Shoot()
+        {
+            // Evitar un disparo extra al soltar. onClick sigue sirviendo para teclado y pruebas.
+            if (disparoSostenido != null && disparoSostenido.OmitirClick) return;
+            DispararDesdeBoton();
+        }
+        private void DispararDesdeBoton()
+        {
+            if (!isActiveAndEnabled || controller == null || !controller.SeguimientoDisponible || controller.CurrentState != "WAVE") return;
+            if (legacyShoot != null && legacyShoot.interactable) legacyShoot.onClick.Invoke();
+        }
         private void Reload() { if (legacyReload != null) legacyReload.onClick.Invoke(); }
         private void Retry()
         {
@@ -124,6 +139,9 @@ namespace RiftHuntersAR.UI.Visual
             string nombreArma = weapon != null ? weapon.NombreArma : "ARMA";
             scoreValue.text = points.ToString();
             ammoValue.text = $"{nombreArma} {ammo}/{cargador}";
+            var armaActual = controller != null && controller.Armas != null ? controller.Armas.Actual : null;
+            if (armaActual != null && armaActual.EstaRecargando)
+                ammoValue.text += $" · {Mathf.RoundToInt(armaActual.ProgresoRecarga * 100)}%";
             bool jefe = controller != null && controller.EsJefe;
             waveValue.text = jefe ? "JEFE" : wave > 0 ? $"{wave} / 4" : "— / 4";
             enemyValue.text = alive.ToString();
@@ -148,6 +166,8 @@ namespace RiftHuntersAR.UI.Visual
             if (state == "COUNTDOWN" && controller != null) stateValue.text = controller.TextoCuenta;
             else if (state == "SCANNING") stateValue.text = status;
             else if (controller != null && !controller.SeguimientoDisponible && state == "WAVE") stateValue.text = status;
+            else if (state == "WAVE" && controller != null && controller.Generador != null && controller.Generador.EsperandoDistancia)
+                stateValue.text = "Aléjate un poco del portal para que salgan los enemigos.";
             else if (state == "WAVE" && !string.IsNullOrEmpty(anuncio)) stateValue.text = anuncio;
             else if (jefe && state == "WAVE" && nucleos != null) stateValue.text = nucleos.Pista;
             else stateValue.text = "";

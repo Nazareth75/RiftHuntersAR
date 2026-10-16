@@ -19,6 +19,7 @@ namespace RiftHuntersAR.UI.Visual
         Arma selected;
         void Start()
         {
+            viewRoot.localScale *= .75f;
             Views = new GameObject[3]; Views[0] = plasmaView;
             for (int i=1;i<3;i++)
             {
@@ -62,7 +63,7 @@ namespace RiftHuntersAR.UI.Visual
             if(Selectors!=null) foreach(var button in Selectors)
             {
                 button.gameObject.SetActive(hud.controller!=null && hud.controller.CurrentState=="WAVE");
-                button.interactable=usable && !manager.Actual.EstaRecargando;
+                button.interactable=usable;
             }
         }
         public void Refresh()

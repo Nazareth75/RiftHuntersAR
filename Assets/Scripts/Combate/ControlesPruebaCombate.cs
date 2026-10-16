@@ -188,7 +188,7 @@ namespace RiftHunters.Combate
                 camaraApuntado.transform.rotation = Quaternion.identity;
                 generador.GenerarGrupo(1, 1);
             }
-            GUI.enabled = vidas > 0 && !pausado && !gestorArmas.Actual.EstaRecargando;
+            GUI.enabled = vidas > 0 && !pausado;
             if (GUI.Button(new Rect(20, 190, 150, 45), "1 - PLASMA"))
                 gestorArmas.SeleccionarArma(0);
             if (GUI.Button(new Rect(180, 190, 150, 45), "2 - ELECTRICA"))
