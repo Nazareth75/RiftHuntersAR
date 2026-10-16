@@ -78,3 +78,20 @@ Respaldo previo publicado: a5c5ecc, rama Devmodule/dilan-mejoras.
 Pruebas realizadas en una copia aislada de Unity usando una escena física real: impacto exacto y cadencia; tolerancia junto al borde; pared que bloquea; exclusión de objetivo protegido; selección durante recarga; conservación del tiempo pendiente y de cargadores 30/8/5; ausencia de feedback duplicado; toque breve, mantener, soltar, salir del botón y botón bloqueado; cantidades de oleadas. Todas pasaron. Compilación C# para Editor y Android correcta. No se generó ni instaló un APK nuevo; falta valorar la comodidad táctil en el teléfono.
 
 Prueba manual recomendada: mantener DISPARAR en lugar de pulsarlo repetidamente; soltar y comprobar que se detiene; rozar el borde de una criatura con la mira; intentar el mismo disparo detrás de un obstáculo con collider; recargar Plasma, cambiar a otra arma y volver para comprobar que retoma su recarga; observar las parejas y el movimiento cuando se acercan.
+
+## Reciclaje adaptable a superficies pequeñas — 16 de octubre de 2026
+
+La clasificación deja de exigir reiniciar la partida si no caben tres contenedores grandes.
+
+- StationPlacement busca filas y triángulos con escalas 0,55 / 0,40 / 0,30 / 0,24. Sobre modelos de 82 cm esto equivale aproximadamente a 45 / 33 / 25 / 20 cm. Comprueba las huellas completas, márgenes, separación y que no tapen residuos. La búsqueda se hace una sola vez al preparar la recuperación, con menos combinaciones y buffers reutilizados.
+- RecyclingGameplay mantiene las estaciones 3D si caben. Si no hay una distribución válida, permite seleccionar el residuo y clasificarlo con PLÁSTICO / PAPEL / METAL. Ambas rutas comparten las reglas de categoría, recogida y +50 ECO, con protección contra puntuación duplicada y sin saltarse la recuperación final.
+- RecyclingHUD sustituye el botón de reiniciar por esos tres botones contextuales. Solo se habilitan cuando hay un residuo seleccionado y tracking disponible; se ocultan al recuperar la zona. Se conserva la selección táctil de residuos en el suelo.
+- La animación de recogida utiliza la escala del contenedor. En modo compacto el residuo se recoge en su posición, sin inventar una estación fuera del suelo.
+
+Validación en Unity, en copia aislada: tres contenedores apoyados y separados dentro de 80x80 cm (escala 0,30); rechazo físico de una superficie 36x36 cm; clasificación sin estaciones; error sin recompensa; bloqueo durante pausa; +50 ECO una sola vez; recuperación final lista al vaciar residuos. Compilación C# Android correcta. Falta comprobar la comodidad y distribución visual en un APK nuevo; no se generó APK.
+
+## Tienda ECO y doce oleadas — 16/10/2026
+Se añadió una tienda entre recuperación y siguiente oleada, tres niveles de daño/cargador/recarga por arma y curación de 34 HP. Doce oleadas, jefes 4/8/12 reforzados, máximo seis enemigos simultáneos, catorce por oleada y diez residuos. Las mejoras duran la partida y Retry las reinicia. Detalles, balance y pasos de prueba: Assets/Documentation/TIENDA_ECO_Y_12_OLEADAS.md. Validación real de las doce oleadas en copia aislada de Unity, sin errores; prueba física y APK nueva pendientes.
+
+## Contenedores con posición confirmada — 16/10/2026
+La primera recuperación permite apuntar al suelo del portal y confirmar una vista previa de los tres contenedores. Se ocultan al combatir y se reutilizan bajo la misma ancla en las siguientes recogidas. Reubicar permite cambiar su posición; Usar botones es una alternativa explícita si no cabe la fila. Se conserva la elección con el mismo portal, incluso tras Retry, y se descarta al salir de la escena. Detalles: Assets/Documentation/CONTENEDORES_POSICION_GUARDADA.md.

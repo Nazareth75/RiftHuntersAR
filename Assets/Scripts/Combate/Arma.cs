@@ -19,6 +19,21 @@ namespace RiftHunters.Combate
         [SerializeField, Min(1)] protected int capacidadCargador = 30;
         [UnityEngine.Serialization.FormerlySerializedAs("reloadDuration")]
         [SerializeField, Min(0.01f)] protected float duracionRecarga = 1.5f;
+        private int danoBase, cargadorBase;
+        private float recargaBase;
+        public int Dano => dano;
+        public float TiempoRecarga => duracionRecarga;
+        public float FactorDano => danoBase > 0 ? (float)dano / danoBase : 1f;
+        public void AplicarMejoras(int nivelDano, int nivelCargador, int nivelRecarga)
+        {
+            if (danoBase == 0) { danoBase = dano; cargadorBase = capacidadCargador; recargaBase = duracionRecarga; }
+            int anterior = capacidadCargador;
+            dano = Mathf.CeilToInt(danoBase * (1f + .2f * Mathf.Clamp(nivelDano, 0, 3)));
+            capacidadCargador = Mathf.CeilToInt(cargadorBase * (1f + .25f * Mathf.Clamp(nivelCargador, 0, 3)));
+            duracionRecarga = recargaBase * (1f - .12f * Mathf.Clamp(nivelRecarga, 0, 3));
+            Municion = Mathf.Clamp(Municion + Mathf.Max(0, capacidadCargador - anterior), 0, capacidadCargador);
+            MunicionCambiada?.Invoke();
+        }
         private float siguienteDisparo;
         private float finRecarga;
         private float inicioPausa;
@@ -36,7 +51,7 @@ namespace RiftHunters.Combate
         public event Action MunicionCambiada;
         public event Action<Vector3, Vector3> DisparoRealizado;
 
-        protected virtual void Awake() => ReiniciarArma();
+        protected virtual void Awake() { AplicarMejoras(0, 0, 0); ReiniciarArma(); }
 
         protected virtual void Update()
         {

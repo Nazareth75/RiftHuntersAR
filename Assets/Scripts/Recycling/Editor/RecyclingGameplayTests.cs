@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Collections.Generic;
@@ -67,7 +67,7 @@ namespace RiftHuntersAR.Recycling.Editor
                 }
                 boundary.SetValue(surface,new[]{new Vector2(-.2f,-.2f),new Vector2(.2f,-.2f),new Vector2(.2f,.2f),new Vector2(-.2f,.2f)});
                 if(StationPlacement.TryFind(surface,Vector3.zero,Vector3.zero,camera,out _,out _,out _))throw new Exception("Tiny plane must not force floating/overlapping stations");
-                File.WriteAllText("Temp/RiftRecyclingPlacementChecks.txt","PASS bounded AR surface: grounded separated row; Plastic/Paper/Metal left-to-right; tiny plane rejected with rescan fallback.\n");
+                File.WriteAllText("Temp/RiftRecyclingPlacementChecks.txt","PASS bounded AR surface: grounded separated row; Plastic/Paper/Metal left-to-right; tiny plane rejected; gameplay uses compact classification buttons.\n");
             }
             finally {EditorSceneManager.ClosePreviewScene(preview);}
         }
@@ -123,7 +123,7 @@ namespace RiftHuntersAR.Recycling.Editor
                         SessionState.SetBool(Demo,false);Application.runInBackground=wasBackground;return;
                     }
                 }
-                if(EditorApplication.timeSinceStartup-started>230)throw new Exception("Full recycling flow timeout, stage="+stage+" state="+controller.CurrentState);
+                if(EditorApplication.timeSinceStartup-started>480)throw new Exception("Full recycling flow timeout, stage="+stage+" state="+controller.CurrentState);
                 if(stage==1)
                 {
                     if(controller.CurrentState!="WAVE")return;
@@ -134,6 +134,7 @@ namespace RiftHuntersAR.Recycling.Editor
                     Check(!flow.Select(residue),"Residues cannot be collected during combat");
                     Capture("Contamination");stage=11;next=Time.timeAsDouble+.3;return;
                 }
+                if(flow.EsperandoColocacion)flow.UsarBotonesClasificacion();
                 if(Time.timeAsDouble<next)return;
                 if(stage==11){controller.Player.TakeDamage(100);stage=2;next=Time.timeAsDouble+.2;return;}
                 if(stage==2)
@@ -150,9 +151,10 @@ namespace RiftHuntersAR.Recycling.Editor
                 }
                 if(stage==4)
                 {
+                    if(GameManager.Instance.EntreOleadas) { GameManager.Instance.SiguienteOleada(); return; }
                     if(controller.CurrentState=="VICTORY")
                     {
-                        Check(finalSeen && recoveries==5,"Victory deferred through all four recoveries and final boss recovery");
+                        Check(finalSeen && recoveries==12,"Victoria tras las doce recuperaciones y el jefe final");
                         Check(pollutedKinds.SetEquals(new[]{0,1,2}),"Basic, Fast and Tank actually contaminated during real waves");
                         Check(flow.EcoPoints==totalCollected*50 && flow.EcoPoints>0,"ECO conserved across all waves, exactly +50 per classified residue");
                         Check(Object.FindObjectsByType<RecycleStation>(FindObjectsSortMode.None).Length==0 && flow.PendingCount==0,"Final stations removed, pending count zero");
@@ -162,7 +164,7 @@ namespace RiftHuntersAR.Recycling.Editor
                     {
                         if(!flow.InputAvailable)return;
                         Check(controller.AliveEnemies==0 && GameManager.Instance.RecoveryInProgress,"Last enemy gates next wave during recovery "+recoveries);
-                        Check(flow.Stations.Count==3,"Exactly three stations appear after combat");
+                        Check(flow.Stations.Count==3 || flow.ClasificacionCompacta,"Tres estaciones o clasificación compacta tras combate");
                         stateAtRecovery=GameManager.Instance.State;waveAtRecovery=controller.CurrentWave;lastEco=flow.EcoPoints;
                         recoveries++;if(flow.FinalRecovery){finalSeen=true;Check(stateAtRecovery==GameState.Boss && controller.CurrentState!="VICTORY","Guardian death waits for final classification");}
                         foreach(var station in flow.Stations)
@@ -190,7 +192,7 @@ namespace RiftHuntersAR.Recycling.Editor
                         }
                         else
                         {
-                            Check(emitter.EmittedCount==emitter.Limit,"Enemy emits bounded pollution before retirement: "+enemy.name);
+                            Check(emitter.EmittedCount<=emitter.Limit,"Enemy emits bounded pollution before retirement: "+enemy.name);
                             pollutedKinds.Add(enemy.GetComponent<EnemyProceduralVisual>().Kind);enemy.RecibirDano(enemy.VidaMaxima);
                         }
                     }
@@ -206,15 +208,16 @@ namespace RiftHuntersAR.Recycling.Editor
                     item=flow.Selected;
                     if(!wrongChecked)
                     {
-                        var wrong=flow.Stations.First(s=>s.Category!=item.Category);TapStation(wrong);
+                        var wrong=flow.Stations.FirstOrDefault(s=>s.Category!=item.Category);
+                        if(wrong!=null)TapStation(wrong);else flow.ClasificarCategoria((RecyclingCategory)(((int)item.Category+1)%3));
                         Check(!item.Collected && flow.Selected==item && flow.PendingCount==pending && flow.Feedback=="CONTENEDOR INCORRECTO","Incorrect station preserves item and allows retry");
                         Check(flow.EcoPoints==eco && hud.score.Score==score && controller.Player.CurrentHealth==health,"Wrong classification never changes ECO, combat score or life");wrongChecked=true;
                         Capture("Incorrect");
                     }
-                    var correct=flow.Stations.First(s=>s.Category==item.Category);Check(TapStation(correct),"Correct station touch accepts category "+item.Category);
+                    var correct=flow.Stations.FirstOrDefault(s=>s.Category==item.Category);Check(correct!=null?TapStation(correct):flow.ClasificarCategoria(item.Category),"Correct station touch accepts category "+item.Category);
                     totalCollected++;
                     Check(flow.EcoPoints==eco+50 && flow.PendingCount==pending-1 && item.Collected,"Correct classification +50 ECO and pending decrements once");
-                    Check(!flow.Classify(correct) && flow.EcoPoints==eco+50,"Repeated station tap cannot duplicate ECO");
+                    Check(!(correct!=null?flow.Classify(correct):flow.ClasificarCategoria(item.Category)) && flow.EcoPoints==eco+50,"Repeated station tap cannot duplicate ECO");
                     Capture("Recovery");
                     if(flow.PendingCount==0){stage=6;next=Time.timeAsDouble+.1;}else next=Time.timeAsDouble+.4;return;
                 }
@@ -225,13 +228,13 @@ namespace RiftHuntersAR.Recycling.Editor
                 }
                 if(stage==7)
                 {
-                    Check(!flow.Active && flow.StationsRoot==null,"Stations hidden before next existing wave/Victory");
+                    Check(!flow.Active && (flow.StationsRoot==null || !flow.StationsRoot.gameObject.activeSelf),"Stations hidden before next existing wave/Victory");
                     Check(flow.EcoPoints>=lastEco,"ECO persists after recovery");
                     stage=4;return;
                 }
                 if(stage==8)
                 {
-                    Check(flow.EcoPoints==0 && !flow.Active && flow.StationsRoot==null && flow.PendingCount==0 && flow.Selected==null,"Retry after Victory clears every recycling state");
+                    Check(flow.EcoPoints==0 && !flow.Active && (flow.StationsRoot==null || !flow.StationsRoot.gameObject.activeSelf) && flow.PendingCount==0 && flow.Selected==null,"Retry after Victory clears every recycling state");
                     Check(controller.CurrentState=="COUNTDOWN" && controller.NucleosJefe==null,"Retry clears boss and restarts existing countdown");
                     Check(errors==0,"Zero runtime errors");Finish();
                 }

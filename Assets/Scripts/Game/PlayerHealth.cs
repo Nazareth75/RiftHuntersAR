@@ -8,6 +8,11 @@ namespace RiftHuntersAR.Game
         public bool IsDead => CurrentHealth <= 0;
         public event Action Changed;
         public event Action Died;
+        public bool Curar(float cantidad)
+        {
+            if (IsDead || cantidad <= 0 || float.IsNaN(cantidad) || CurrentHealth >= 100) return false;
+            CurrentHealth = Mathf.Min(100, CurrentHealth + cantidad); Changed?.Invoke(); return true;
+        }
         public void ResetHealth() { CurrentHealth = 100; Changed?.Invoke(); }
         public void TakeDamage(float damage)
         {

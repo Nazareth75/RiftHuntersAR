@@ -1,3 +1,4 @@
+﻿using UnityEngine;
 namespace RiftHunters.Game
 {
     public readonly struct GrupoOleada
@@ -17,64 +18,19 @@ namespace RiftHunters.Game
     // Los grupos de cada oleada salen en orden; el siguiente empieza cuando el anterior terminó de aparecer.
     public static class PlanOleadas
     {
-        public const float Intervalo = 1.8f;
-        public const float IntervaloRapido = 1f;
-
-        public static GrupoOleada[] De(GameState estado)
+        public static GrupoOleada[] De(int numero)
         {
-            // Oleada 1: introducción, solo básicos.
-            if (estado == GameState.Wave1)
-                return new[] { new GrupoOleada(TipoEnemigo.Normal, 5, Intervalo) };
-
-            // Oleada 2: aparecen los rápidos intercalados con básicos.
-            if (estado == GameState.Wave2)
-            {
-                return new[]
-                {
-                    new GrupoOleada(TipoEnemigo.Normal, 3, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Rapido, 2, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Normal, 2, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Rapido, 2, Intervalo)
-                };
-            }
-
-            // Oleada 3: mezcla de los anteriores con mayoría de rápidos.
-            if (estado == GameState.Wave3)
-            {
-                return new[]
-                {
-                    new GrupoOleada(TipoEnemigo.Rapido, 3, IntervaloRapido),
-                    new GrupoOleada(TipoEnemigo.Normal, 3, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Rapido, 4, IntervaloRapido)
-                };
-            }
-
-            // Oleada 4: el tanque abre la oleada para presentarlo como enemigo pesado.
-            if (estado == GameState.Wave4)
-            {
-                return new[]
-                {
-                    new GrupoOleada(TipoEnemigo.Tanque, 1, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Normal, 3, Intervalo),
-                    new GrupoOleada(TipoEnemigo.Rapido, 2, IntervaloRapido),
-                    new GrupoOleada(TipoEnemigo.Tanque, 1, Intervalo)
-                };
-            }
-
-            if (estado == GameState.Boss)
-                return new[] { new GrupoOleada(TipoEnemigo.Jefe, 1, Intervalo) };
-
-            return new GrupoOleada[0];
-        }
-
-        public static string Anuncio(GameState estado)
-        {
-            if (estado == GameState.Wave1) return "OLEADA 1: ENEMIGOS BÁSICOS";
-            if (estado == GameState.Wave2) return "OLEADA 2: ¡LLEGAN LOS RÁPIDOS!";
-            if (estado == GameState.Wave3) return "OLEADA 3: ¡ENJAMBRE MIXTO!";
-            if (estado == GameState.Wave4) return "OLEADA 4: ¡CUIDADO CON EL TANQUE!";
-            if (estado == GameState.Boss) return "¡EL RIFT GUARDIAN SE ACERCA!";
-            return "";
+            if (numero < 1 || numero > BalancePartida.TotalOleadas) return new GrupoOleada[0];
+            if (BalancePartida.EsJefe(numero)) return new[] { new GrupoOleada(TipoEnemigo.Jefe, 1, 1f) };
+            int total = Mathf.Min(BalancePartida.MaximosPorOleada, 4 + numero + (numero > 1 ? 1 : 0));
+            int tanques = numero < 3 ? 0 : Mathf.Min(3, 1 + numero / 5);
+            int rapidos = numero < 2 ? 0 : Mathf.Min(6, 1 + numero / 2);
+            int normales = total - tanques - rapidos;
+            return new[] {
+                new GrupoOleada(TipoEnemigo.Normal, normales, Mathf.Max(.85f, 1.8f - numero * .06f)),
+                new GrupoOleada(TipoEnemigo.Rapido, rapidos, Mathf.Max(.7f, 1.15f - numero * .025f)),
+                new GrupoOleada(TipoEnemigo.Tanque, tanques, 1.7f)
+            };
         }
 
         public static float Espera(GameState estado)

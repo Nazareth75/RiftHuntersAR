@@ -40,7 +40,7 @@ namespace RiftHunters.Combate
                 Enemigo enemigo = colisionador.GetComponentInParent<Enemigo>();
                 if (enemigo == null || !enemigo.isActiveAndEnabled || enemigo.Vida <= 0 || !danados.Add(enemigo))
                     continue;
-                enemigo.RecibirDano(danoArea);
+                enemigo.RecibirDano(Mathf.CeilToInt(danoArea * FactorDano));
             }
 
             MostrarExplosion(impacto.point);

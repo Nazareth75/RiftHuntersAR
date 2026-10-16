@@ -39,17 +39,8 @@ namespace RiftHunters.Game
         public bool EsJefe => State == GameState.Boss;
         public bool RecoveryInProgress { get; private set; }
 
-        public int NumeroOleada
-        {
-            get
-            {
-                if (State == GameState.Wave1) return 1;
-                if (State == GameState.Wave2) return 2;
-                if (State == GameState.Wave3) return 3;
-                if (State == GameState.Wave4) return 4;
-                return 0;
-            }
-        }
+        public int NumeroOleada { get; private set; }
+        public bool EntreOleadas { get; private set; }
 
         public bool IsRunning => State == GameState.Countdown || EsOleada(State);
 
@@ -89,7 +80,7 @@ namespace RiftHunters.Game
         {
             // Consultar en cada frame: tampoco avanzan anuncios ni cuenta atrás sin tracking.
             if (controlador != null && !controlador.SeguimientoDisponible) return;
-            if (IsRunning) matchTime += Time.deltaTime;
+            if (IsRunning && !EntreOleadas) matchTime += Time.deltaTime;
             if (RecoveryInProgress) return;
             if (EsOleada(State))
             {
@@ -130,6 +121,8 @@ namespace RiftHunters.Game
 
             ResolverFuentes();
             RecoveryInProgress = false;
+            EntreOleadas = false; NumeroOleada = 1;
+            GetComponent<RiftHuntersAR.Integration.TiendaECO>()?.Reiniciar();
             GetComponent<IWaveRecovery>()?.CancelRecovery(true);
             if (puntuacion != null) puntuacion.ResetScore();
             if (vida != null) vida.Retry();
@@ -146,6 +139,8 @@ namespace RiftHunters.Game
         {
             cerrando = true;
             RecoveryInProgress = false;
+            EntreOleadas = false; NumeroOleada = 1;
+            GetComponent<RiftHuntersAR.Integration.TiendaECO>()?.Reiniciar();
             GetComponent<IWaveRecovery>()?.CancelRecovery(true);
             CambiarEstado(GameState.Waiting);
             matchTime = 0f;
@@ -192,6 +187,7 @@ namespace RiftHunters.Game
                 GetComponent<IWaveRecovery>()?.CancelRecovery(siguiente == GameState.Waiting);
             }
             State = siguiente;
+            if (siguiente == GameState.Waiting || siguiente == GameState.GameOver) EntreOleadas = false;
             bool oleada = EsOleada(siguiente);
             bool fin = siguiente == GameState.Victory || siguiente == GameState.GameOver;
             if (!oleada)
@@ -216,9 +212,9 @@ namespace RiftHunters.Game
         void ComenzarOleada(GameState oleada)
         {
             pendientes.Clear();
-            GrupoOleada[] grupos = PlanOleadas.De(oleada);
-            for (int i = 0; i < grupos.Length; i++) pendientes.Enqueue(grupos[i]);
-            Anuncio = PlanOleadas.Anuncio(oleada);
+            GrupoOleada[] grupos = PlanOleadas.De(NumeroOleada);
+            for (int i = 0; i < grupos.Length; i++) if (grupos[i].Cantidad > 0) pendientes.Enqueue(grupos[i]);
+            Anuncio = EsJefe ? $"OLEADA {NumeroOleada}/12: RIFT GUARDIAN" : $"OLEADA {NumeroOleada}/12";
             esperaOleada = PlanOleadas.Espera(oleada);
         }
 
@@ -253,7 +249,7 @@ namespace RiftHunters.Game
                 RecoveryInProgress = true;
                 generador?.Pausar(true);
                 GameplayHooks.SolicitarPausa(true);
-                recovery.BeginRecovery(State == GameState.Boss);
+                recovery.BeginRecovery(NumeroOleada == BalancePartida.TotalOleadas);
             }
             else Avanzar();
             enAviso = false;
@@ -263,17 +259,25 @@ namespace RiftHunters.Game
         {
             if (!RecoveryInProgress || cerrando || !EsOleada(State) || VidaActual <= 0) return;
             if (GetComponent<IWaveRecovery>() is IWaveRecovery recovery && !recovery.ReadyToAdvance) return;
-            RecoveryInProgress = false;
+            if (NumeroOleada >= BalancePartida.TotalOleadas)
+            { RecoveryInProgress = false; CambiarEstado(GameState.Victory); return; }
+            EntreOleadas = true;
+        }
+
+        public void SiguienteOleada()
+        {
+            if (!EntreOleadas || !RecoveryInProgress || VidaActual <= 0) return;
+            EntreOleadas = false; RecoveryInProgress = false;
+            GetComponent<RiftHuntersAR.Integration.TiendaECO>()?.Cerrar();
+            GetComponent<RiftHuntersAR.Integration.ARPrototypeController>()?.Arma?.RestaurarMunicion();
             Avanzar();
         }
 
         void Avanzar()
         {
-            if (State == GameState.Wave1) CambiarEstado(GameState.Wave2);
-            else if (State == GameState.Wave2) CambiarEstado(GameState.Wave3);
-            else if (State == GameState.Wave3) CambiarEstado(GameState.Wave4);
-            else if (State == GameState.Wave4) CambiarEstado(GameState.Boss);
-            else if (State == GameState.Boss) CambiarEstado(GameState.Victory);
+            NumeroOleada++;
+            if (NumeroOleada > BalancePartida.TotalOleadas) { CambiarEstado(GameState.Victory); return; }
+            CambiarEstado(BalancePartida.EsJefe(NumeroOleada) ? GameState.Boss : GameState.Wave1);
         }
 
         void AlMorirJugador()

@@ -83,9 +83,13 @@ namespace RiftHuntersAR.Integration
 
         void AlGenerar(Enemigo enemigo)
         {
+            int numero = GameManager.Instance != null ? GameManager.Instance.NumeroOleada : 1;
+            enemigo.ConfigurarEstadisticas(Mathf.CeilToInt(enemigo.VidaMaxima * BalancePartida.Vida(numero)),
+                enemigo.Velocidad * BalancePartida.Velocidad(numero), enemigo.DanoAtaque, enemigo.Puntos);
             if (pedido != TipoEnemigo.Jefe) return;
             jefe = enemigo;
             nucleos = enemigo.gameObject.AddComponent<NucleosJefe>();
+            nucleos.ConfigurarFuerza(BalancePartida.FuerzaJefe(numero));
             nucleos.Inicializar(camara);
         }
 

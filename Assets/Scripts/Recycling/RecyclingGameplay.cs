@@ -12,13 +12,22 @@ namespace RiftHuntersAR.Recycling
     public sealed class RecyclingGameplay : MonoBehaviour,IWaveRecovery
     {
         public int EcoPoints {get;private set;}
+        public int EcoTotal {get;private set;}
+        public bool IntentarGastarECO(int cantidad)
+        {
+            if (cantidad <= 0 || EcoPoints < cantidad) return false;
+            EcoPoints -= cantidad; return true;
+        }
         public int PendingCount => Items.Count;
         public bool Active {get;private set;}
         public bool ZoneRecovered {get;private set;}
         public bool FinalRecovery {get;private set;}
         public RecyclableItem Selected {get;private set;}
         public string Feedback {get;private set;}="";
-        public Transform StationsRoot {get;private set;}
+        public Transform StationsRoot => colocacion != null ? colocacion.Raiz : null;
+        ColocacionContenedores colocacion;
+        public bool EsperandoColocacion => Active && initialized && !ZoneRecovered && colocacion != null && colocacion.Buscando;
+        public bool PuedeConfirmarContenedores => EsperandoColocacion && controller.SeguimientoDisponible && colocacion.PuedeColocar;
         public List<RecyclableItem> Items {get;}=new();
         public IReadOnlyList<RecycleStation> Stations => stations;
         readonly List<RecycleStation> stations=new();
@@ -27,30 +36,40 @@ namespace RiftHuntersAR.Recycling
         GameManager manager;
         RecyclingVisualCatalog catalog;
         PollutionZone zone;
-        float settledWait,completeWait,feedbackTime,placementRetry;
+        float settledWait,completeWait,feedbackTime;
         bool initialized;
         int collectedThisWave;
         ParticleSystem finalAura;
-        public bool InputAvailable => Active && initialized && !ZoneRecovered && controller!=null && controller.SeguimientoDisponible && manager!=null && manager.RecoveryInProgress;
+        public bool InputAvailable => Active && initialized && !ZoneRecovered && !EsperandoColocacion && controller!=null && controller.SeguimientoDisponible && manager!=null && manager.RecoveryInProgress;
+        public bool ClasificacionCompacta => Active && initialized && !ZoneRecovered && colocacion != null && colocacion.Compacto;
         public bool ReadyToAdvance => ZoneRecovered && Items.Count==0;
         public string Instruction => !Active?"":!controller.SeguimientoDisponible?"RECUPERANDO TRACKING: MIRA EL PORTAL":
             ZoneRecovered?$"ZONA RECUPERADA\n+{collectedThisWave*50} ECO":!initialized?"ZONA CONTAMINADA\nPREPARANDO RECUPERACIÓN":
-            stations.Count==0?"NECESITAS MÁS ESPACIO EN LA SUPERFICIE\nREINICIA Y ESCANEA UNA ZONA MÁS AMPLIA":
+            EsperandoColocacion?colocacion.Mensaje:
+            ClasificacionCompacta?(Selected!=null?"ELIGE PLÁSTICO, PAPEL O METAL":"TOCA UN RESIDUO Y USA LOS BOTONES"):
             Selected!=null?"TOCA EL CONTENEDOR CORRECTO":"ZONA CONTAMINADA\nCLASIFICA LOS RESIDUOS";
         void Awake()
         {
             controller=GetComponent<ARPrototypeController>();manager=GetComponent<GameManager>();
             catalog=Resources.Load<RecyclingVisualCatalog>("RecyclingVisualCatalog");
+            colocacion=gameObject.AddComponent<ColocacionContenedores>();
+            var tienda = GetComponent<TiendaECO>();
+            if (tienda == null) tienda = gameObject.AddComponent<TiendaECO>();
+            tienda.Configurar(controller, manager, this);
         }
         void Start()
         {
             var hud=FindFirstObjectByType<RiftHuntersAR.UI.Visual.VisualHUD>();
-            if(hud!=null)hud.gameObject.AddComponent<RecyclingHUD>().Configure(this,hud);
+            if(hud!=null)
+            {
+                hud.gameObject.AddComponent<RecyclingHUD>().Configure(this,hud);
+                hud.gameObject.AddComponent<RiftHuntersAR.UI.Visual.InterfazTienda>().Configurar(GetComponent<TiendaECO>(), hud);
+            }
         }
         public void BeginRecovery(bool final)
         {
             ClearStations();Deselect();Items.Clear();Active=true;FinalRecovery=final;ZoneRecovered=false;
-            settledWait=.65f;initialized=false;collectedThisWave=0;Feedback="";placementRetry=0;
+            settledWait=.65f;initialized=false;collectedThisWave=0;Feedback="";
             var portal=controller.PortalActivo;
             if(portal!=null)zone=PollutionZone.For(portal.transform.parent);
             if(final && zone!=null && catalog!=null && catalog.contaminationVFX!=null)
@@ -68,7 +87,7 @@ namespace RiftHuntersAR.Recycling
             if(zone==null && controller!=null && controller.PortalActivo!=null)
                 zone=PollutionZone.For(controller.PortalActivo.transform.parent);
             if(zone!=null)zone.Clear();
-            if(resetEco)EcoPoints=0;
+            if(resetEco) { EcoPoints=0; EcoTotal=0; }
         }
         void Update()
         {
@@ -77,14 +96,17 @@ namespace RiftHuntersAR.Recycling
                 bool tracked=controller!=null && controller.SeguimientoDisponible;
                 if(tracked && finalAura.isPaused)finalAura.Play();else if(!tracked && finalAura.isPlaying)finalAura.Pause();
             }
-            if(!Active || controller==null || !controller.SeguimientoDisponible)return;
+            if(!Active || controller==null)return;
+            colocacion.Actualizar(controller.SeguimientoDisponible);
+            SincronizarEstaciones();
+            if(!controller.SeguimientoDisponible)return;
             if(feedbackTime>0){feedbackTime-=Time.deltaTime;if(feedbackTime<=0)Feedback="";}
             if(!initialized)
             {
                 settledWait-=Time.deltaTime;if(settledWait>0)return;
                 if(zone!=null)
                     foreach(var item in zone.GetComponentsInChildren<RecyclableItem>())if(item.Classifiable)Items.Add(item);
-                initialized=true;TryPlaceStations();
+                initialized=true;if(Items.Count>0)TryPlaceStations();
             }
             Items.RemoveAll(x=>x==null || !x.Classifiable);
             if(Items.Count==0 && !ZoneRecovered)
@@ -102,28 +124,34 @@ namespace RiftHuntersAR.Recycling
                 }
                 return;
             }
-            if(stations.Count==0)
-            {placementRetry-=Time.deltaTime;if(placementRetry<=0){placementRetry=1;TryPlaceStations();}return;}
+            // También se pueden seleccionar residuos en el modo de botones.
             if(TryTap(out Vector2 point))HandleTap(point);
         }
         void TryPlaceStations()
         {
-            if(stations.Count>0 || controller.PortalActivo==null || catalog==null)return;
-            var portal=controller.PortalActivo;var floor=portal.GetComponentInParent<SueloCombateAR>();
-            if(!StationPlacement.TryFind(floor,portal.transform.position,portal.SpawnPoint.position,controller.CamaraJuego,out var positions,out var rotation,out float scale))return;
-            var root=new GameObject("Recovery stations - anchored");root.transform.SetParent(portal.transform.parent,false);StationsRoot=root.transform;
-            for(int i=0;i<3;i++)
-            {
-                var prefab=catalog.Station(i);
-                if(prefab==null){Debug.LogError("Recycling catalog: missing station "+i);ClearStations();return;}
-                var instance=Instantiate(prefab,positions[i],rotation,StationsRoot);instance.transform.localScale*=scale;
-                stations.Add(instance.GetComponent<RecycleStation>());
-            }
+            colocacion.Preparar(controller.PortalActivo, controller.CamaraJuego, catalog);
+            SincronizarEstaciones();
         }
-        void ClearStations()
+        void SincronizarEstaciones()
         {
             stations.Clear();
-            if(StationsRoot!=null){StationsRoot.gameObject.SetActive(false);Destroy(StationsRoot.gameObject);StationsRoot=null;}
+            for(int i=0;i<colocacion.Estaciones.Count;i++) stations.Add(colocacion.Estaciones[i]);
+        }
+        void ClearStations() { if(colocacion!=null)colocacion.Ocultar(); }
+        public bool ConfirmarContenedores()
+        {
+            if(!PuedeConfirmarContenedores || !colocacion.Confirmar())return false;
+            SincronizarEstaciones(); return true;
+        }
+        public void UsarBotonesClasificacion()
+        {
+            if(!Active || !initialized || ZoneRecovered || !controller.SeguimientoDisponible)return;
+            Deselect();colocacion.UsarBotones();
+        }
+        public void ReubicarContenedores()
+        {
+            if(!Active || !initialized || ZoneRecovered || !controller.SeguimientoDisponible)return;
+            Deselect();colocacion.Reubicar();
         }
         void Deselect(){if(Selected!=null)Selected.SetSelected(false);Selected=null;}
         public bool Select(RecyclableItem item)
@@ -133,12 +161,22 @@ namespace RiftHuntersAR.Recycling
         }
         public bool Classify(RecycleStation station)
         {
-            if(!InputAvailable || Selected==null || station==null || !stations.Contains(station))return false;
-            if(Selected.Category!=station.Category)
+            if(!InputAvailable || ClasificacionCompacta || Selected==null || station==null || !station.gameObject.activeInHierarchy || !stations.Contains(station))return false;
+            return Clasificar(station.Category, station.transform.TransformPoint(Vector3.up * .65f));
+        }
+        public bool ClasificarCategoria(RecyclingCategory categoria)
+        {
+            if (!ClasificacionCompacta || !InputAvailable || Selected == null || categoria == RecyclingCategory.Other) return false;
+            return Clasificar(categoria, Selected.transform.position + Vector3.up * .12f);
+        }
+        private bool Clasificar(RecyclingCategory categoria, Vector3 destino)
+        {
+            if (Selected == null || !Selected.Classifiable) return false;
+            if(Selected.Category!=categoria)
             {Feedback="CONTENEDOR INCORRECTO";feedbackTime=1.4f;return false;}
-            var item=Selected;item.MarkCollected();Items.Remove(item);Selected=null;EcoPoints+=50;collectedThisWave++;
+            var item=Selected;item.MarkCollected();Items.Remove(item);Selected=null;EcoPoints+=50;EcoTotal+=50;collectedThisWave++;
             Feedback="RESIDUO CLASIFICADO\n+50 ECO";feedbackTime=1.25f;
-            item.gameObject.AddComponent<RecyclingCollection>().Begin(station.transform.position+station.transform.up*.65f,catalog.contaminationVFX);
+            item.gameObject.AddComponent<RecyclingCollection>().Begin(destino,catalog != null ? catalog.contaminationVFX : null);
             return true;
         }
         bool TryTap(out Vector2 point)
@@ -153,12 +191,13 @@ namespace RiftHuntersAR.Recycling
         }
         public bool HandleTap(Vector2 point)
         {
-            if(!InputAvailable)return false;
+            if(!InputAvailable && !EsperandoColocacion)return false;
             if(EventSystem.current!=null)
             {
                 uiHits.Clear();EventSystem.current.RaycastAll(new PointerEventData(EventSystem.current){position=point},uiHits);
                 if(uiHits.Count>0)return false;
             }
+            if(EsperandoColocacion)return ConfirmarContenedores();
             // Physics.DefaultRaycastLayers excludes recycling. This explicit query
             // opts into layer 2 and triggers only during the recovery phase.
             var ray=controller.CamaraJuego.ScreenPointToRay(point);

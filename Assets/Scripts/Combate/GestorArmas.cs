@@ -9,6 +9,7 @@ namespace RiftHunters.Combate
         [SerializeField] private Arma[] armas;
         private int seleccionada;
         public bool EstaPausado { get; private set; }
+        public Arma ObtenerArma(int indice) => armas != null && indice >= 0 && indice < armas.Length ? armas[indice] : null;
         public Arma Actual => armas != null && armas.Length > 0 ? armas[seleccionada] : null;
         public event Action ArmaCambiada;
 

@@ -8,6 +8,9 @@ namespace RiftHuntersAR.Recycling
     public sealed class RecyclableItem : MonoBehaviour
     {
         [SerializeField] RecyclingCategory category;
+        private PollutionZone zona;
+        private void OnEnable() { zona = GetComponentInParent<PollutionZone>(); if (zona != null) zona.Registrar(this); }
+        private void OnDestroy() { if (zona != null) zona.Retirar(this); }
         public RecyclingCategory Category => category;
         public bool Collected { get; private set; }
         public bool IsSettled => GetComponent<ResidueLanding>() == null;

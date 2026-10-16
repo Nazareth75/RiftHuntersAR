@@ -10,8 +10,8 @@ namespace RiftHunters.Combate
     [DefaultExecutionOrder(100)]
     public sealed class NucleosJefe : MonoBehaviour
     {
-        private const int VidaBrazo = 100;
-        private const int VidaCentral = 150;
+        private const int VidaBrazo = 80;
+        private const int VidaCentral = 120;
         private static readonly Color ColorBrazo = new(0.25f, 0.9f, 1f);
         private static readonly Color ColorCentral = new(1f, 0.32f, 0.08f);
         private static readonly Color ColorProtegido = new(0.35f, 0.12f, 0.1f);
@@ -30,6 +30,14 @@ namespace RiftHunters.Combate
             public readonly MaterialPropertyBlock propiedades = new();
         }
 
+        private float fuerza = 1f;
+        private int vidaBrazo = VidaBrazo, vidaCentral = VidaCentral;
+        public void ConfigurarFuerza(float valor)
+        {
+            fuerza = Mathf.Clamp(valor, 1f, 2f);
+            vidaBrazo = Mathf.CeilToInt(VidaBrazo * fuerza);
+            vidaCentral = Mathf.CeilToInt(VidaCentral * fuerza);
+        }
         private Enemigo jefe;
         private Transform camara;
         private Nucleo izquierdo, derecho, central;
@@ -48,7 +56,7 @@ namespace RiftHunters.Combate
         {
             get
             {
-                float total = VidaBrazo * 2 + VidaCentral;
+                float total = vidaBrazo * 2 + vidaCentral;
                 float vida = Vida(izquierdo) + Vida(derecho) + Vida(central);
                 return Mathf.Clamp01(vida / total);
             }
@@ -60,8 +68,8 @@ namespace RiftHunters.Combate
         {
             camara = camaraJugador;
             jefe = GetComponent<Enemigo>();
-            jefe.ConfigurarEstadisticas(jefe.VidaMaxima, 0.10f, 1, jefe.Puntos);
-            jefe.ConfigurarAtaqueContinuo(4.5f, .75f);
+            jefe.ConfigurarEstadisticas(jefe.VidaMaxima, .115f * (1f + (fuerza - 1f) * .18f), 1, jefe.Puntos);
+            jefe.ConfigurarAtaqueContinuo(4.5f - (fuerza - 1f) * .8f, .75f);
             jefe.Invulnerable = true;
             jefe.ImpactoBloqueado += AlBloquear;
             if(camara!=null)
@@ -87,9 +95,9 @@ namespace RiftHunters.Combate
             float alturaBrazos = limites.min.y + alto * 0.55f;
             float alturaPecho = limites.min.y + alto * 0.62f;
 
-            izquierdo = CrearNucleo("Nucleo brazo izquierdo", new Vector3(-ancho * 0.85f, alturaBrazos, frente * 0.45f), radio, ColorBrazo, VidaBrazo);
-            derecho = CrearNucleo("Nucleo brazo derecho", new Vector3(ancho * 0.85f, alturaBrazos, frente * 0.45f), radio, ColorBrazo, VidaBrazo);
-            central = CrearNucleo("Nucleo central", new Vector3(0f, alturaPecho, frente + radio * 0.4f), radio * 1.25f, ColorCentral, VidaCentral);
+            izquierdo = CrearNucleo("Nucleo brazo izquierdo", new Vector3(-ancho * 0.85f, alturaBrazos, frente * 0.45f), radio, ColorBrazo, vidaBrazo);
+            derecho = CrearNucleo("Nucleo brazo derecho", new Vector3(ancho * 0.85f, alturaBrazos, frente * 0.45f), radio, ColorBrazo, vidaBrazo);
+            central = CrearNucleo("Nucleo central", new Vector3(0f, alturaPecho, frente + radio * 0.4f), radio * 1.25f, ColorCentral, vidaCentral);
             central.enemigo.Invulnerable = true;
             central.enemigo.ImpactoBloqueado += AlBloquear;
             AlinearConModelo(izquierdo, "WeakPoint_Left");

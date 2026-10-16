@@ -32,6 +32,8 @@ namespace RiftHunters.Combate
         public int Vida { get; private set; }
         public int Puntos => puntos;
         public int VidaMaxima => vidaMaxima;
+        public float Velocidad => velocidad;
+        public int DanoAtaque => danoAtaque;
         public bool Invulnerable { get; set; }
         public event Action VidaCambiada;
         public event Action<Enemigo> Murio;

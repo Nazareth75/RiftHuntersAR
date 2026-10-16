@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using RiftHuntersAR.UI.Visual;
 
@@ -13,7 +13,8 @@ namespace RiftHuntersAR.Recycling
         public Text InstructionLabel {get;private set;}
         public Text FeedbackLabel {get;private set;}
         public Text PendingLabel {get;private set;}
-        Button rescan;
+        Button confirmar, usarBotones, reubicar;
+        readonly Button[] categorias = new Button[3];
         public void Configure(RecyclingGameplay value,VisualHUD presentation)
         {
             flow=value;hud=presentation;
@@ -22,12 +23,37 @@ namespace RiftHuntersAR.Recycling
             PendingLabel=Label(safe,"RecoveryPending",new Vector2(0,-425),new Vector2(750,60),38,Color.white);
             InstructionLabel=Label(safe,"RecoveryInstruction",new Vector2(0,-660),new Vector2(860,140),44,new Color(.35f,1,.7f));
             FeedbackLabel=Label(safe,"RecoveryFeedback",new Vector2(0,-810),new Vector2(820,110),40,Color.white);
-            var buttonRoot=new GameObject("RecoveryRescan",typeof(RectTransform),typeof(Image),typeof(Button));buttonRoot.transform.SetParent(safe,false);
-            var rt=buttonRoot.GetComponent<RectTransform>();rt.anchorMin=rt.anchorMax=new Vector2(.5f,0);rt.anchoredPosition=new Vector2(0,560);rt.sizeDelta=new Vector2(660,100);
-            buttonRoot.GetComponent<Image>().color=new Color(.025f,.12f,.15f,.9f);
-            rescan=buttonRoot.GetComponent<Button>();rescan.onClick.AddListener(()=>UnityEngine.SceneManagement.SceneManager.LoadScene("ARGame"));
-            var caption=Label(buttonRoot.transform,"Label",Vector2.zero,new Vector2(620,90),35,Color.white);caption.rectTransform.anchorMin=caption.rectTransform.anchorMax=new Vector2(.5f,.5f);caption.text="VOLVER A ESCANEAR (REINICIA PARTIDA)";
-            buttonRoot.SetActive(false);
+            string[] nombres = { "PLÁSTICO", "PAPEL", "METAL" };
+            for (int i = 0; i < categorias.Length; i++)
+            {
+                int indice = i;
+                var objeto = new GameObject("Clasificar_"+i, typeof(RectTransform), typeof(Image), typeof(Button));
+                objeto.transform.SetParent(safe, false);
+                var rect = objeto.GetComponent<RectTransform>();
+                rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0);
+                rect.anchoredPosition = new Vector2((i-1)*280, 480); rect.sizeDelta = new Vector2(260, 100);
+                objeto.GetComponent<Image>().color = new Color(.025f, .15f, .18f, .95f);
+                categorias[i] = objeto.GetComponent<Button>();
+                categorias[i].onClick.AddListener(() => flow.ClasificarCategoria((RecyclingCategory)indice));
+                var texto = Label(objeto.transform, "Nombre", Vector2.zero, new Vector2(250, 90), 32, Color.white);
+                texto.rectTransform.anchorMin = texto.rectTransform.anchorMax = new Vector2(.5f, .5f);
+                objeto.SetActive(false);
+            }
+            confirmar=CrearBoton(safe,"COLOCAR AQUÍ",480,()=>flow.ConfirmarContenedores());
+            usarBotones=CrearBoton(safe,"USAR BOTONES",350,()=>flow.UsarBotonesClasificacion());
+            reubicar=CrearBoton(safe,"REUBICAR CONTENEDORES",350,()=>flow.ReubicarContenedores());
+        }
+        Button CrearBoton(Transform padre,string nombre,float altura,UnityEngine.Events.UnityAction accion)
+        {
+            var objeto=new GameObject(nombre,typeof(RectTransform),typeof(Image),typeof(Button));
+            objeto.transform.SetParent(padre,false);
+            var rect=objeto.GetComponent<RectTransform>();rect.anchorMin=rect.anchorMax=new Vector2(.5f,0);
+            rect.anchoredPosition=new Vector2(0,altura);rect.sizeDelta=new Vector2(680,100);
+            objeto.GetComponent<Image>().color=new Color(.025f,.22f,.27f,.97f);
+            objeto.AddComponent<Outline>().effectColor=new Color(.2f,.85f,1f);
+            var texto=Label(objeto.transform,"Texto",Vector2.zero,new Vector2(650,90),32,Color.white);
+            texto.rectTransform.anchorMin=texto.rectTransform.anchorMax=new Vector2(.5f,.5f);
+            var boton=objeto.GetComponent<Button>();boton.onClick.AddListener(accion);objeto.SetActive(false);return boton;
         }
         Text Label(Transform parent,string name,Vector2 position,Vector2 size,int font,Color color)
         {
@@ -43,7 +69,17 @@ namespace RiftHuntersAR.Recycling
             if(flow==null || hud==null || EcoLabel==null)return;
             EcoLabel.text="ECO "+flow.EcoPoints;EcoLabel.gameObject.SetActive(hud.controller.CurrentState!="SCANNING");
             bool active=flow.Active;
-            rescan.gameObject.SetActive(active && flow.InputAvailable && flow.Stations.Count==0 && flow.PendingCount>0);
+            confirmar.gameObject.SetActive(flow.EsperandoColocacion);
+            confirmar.interactable=flow.PuedeConfirmarContenedores;
+            usarBotones.gameObject.SetActive(flow.EsperandoColocacion);
+            usarBotones.interactable=hud.controller.SeguimientoDisponible;
+            reubicar.gameObject.SetActive(active && flow.InputAvailable && flow.PendingCount>0);
+            reubicar.interactable=hud.controller.SeguimientoDisponible;
+            foreach (Button boton in categorias)
+            {
+                boton.gameObject.SetActive(flow.ClasificacionCompacta && flow.PendingCount > 0);
+                boton.interactable = flow.InputAvailable && flow.Selected != null;
+            }
             InstructionLabel.gameObject.SetActive(active);PendingLabel.gameObject.SetActive(active);FeedbackLabel.gameObject.SetActive(active);
             if(active)
             {

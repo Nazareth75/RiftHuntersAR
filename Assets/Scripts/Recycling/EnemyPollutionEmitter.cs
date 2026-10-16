@@ -18,7 +18,7 @@ namespace RiftHuntersAR.Recycling
         {
             motion=presentation;enemy=owner;guardian=kind==3;Limit=guardian?0:kind==2?2:1;
             catalog=Resources.Load<RecyclingVisualCatalog>("RecyclingVisualCatalog");
-            if(guardian) enemy.Murio+=FinalResidues;
+            enemy.Murio+=FinalResidues;
             untilAutomatic=kind==1?1.3f:kind==2?2.8f:2.1f;
             if(guardian && catalog!=null && catalog.contaminationVFX!=null)
             {
@@ -67,7 +67,7 @@ namespace RiftHuntersAR.Recycling
         void FinalResidues(Enemigo owner)
         {
             // One final release from the defeated Guardian's polluted zone, never a timer/spam.
-            if(GetComponentInParent<NucleosJefe>()!=null && catalog!=null) SpawnResidues(3,0);
+            if(catalog!=null && (guardian || EmittedCount==0)) SpawnResidues(guardian ? 3 : 1, guardian ? 0 : motion.Kind);
         }
         void OnDestroy() { if(enemy!=null) enemy.Murio-=FinalResidues; }
         void SpawnResidues(int amount,int firstType)
@@ -83,6 +83,7 @@ namespace RiftHuntersAR.Recycling
                 Vector3 landing=transform.position+transform.right*(.12f*side)-transform.forward*.035f;
                 landing=surface!=null?surface.PosicionAparicion(landing):new Vector3(landing.x,transform.position.y,landing.z);
                 var residue=Instantiate(prefab,zone.transform);
+                zone.Registrar(residue.GetComponent<RecyclableItem>());
                 Quaternion settled=Quaternion.Euler(0,(EmittedCount*137+GetInstanceID())%360,0);
                 // Lay bottle/can on their sides, then measure rotated mesh bottom precisely.
                 if(residue.GetComponent<RecyclableItem>().Category!=RecyclingCategory.Paper) settled*=Quaternion.Euler(0,0,90);

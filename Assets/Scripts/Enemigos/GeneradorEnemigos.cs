@@ -56,9 +56,9 @@ namespace RiftHunters.Combate
             yield return null;
             for (int i = 0; i < cantidad; i++)
             {
-                while (EstaPausado) yield return null;
+                while (EstaPausado || generados.Count >= RiftHunters.Game.BalancePartida.MaximosSimultaneos) yield return null;
                 if (origenGrupo == null || objetivoGrupo == null) break;
-                Vector3 desplazamiento = origenGrupo.right * ((i - (cantidad - 1) * 0.5f) * separacionAparicion);
+                Vector3 desplazamiento = origenGrupo.right * ((i % 3 - 1) * separacionAparicion);
                 Vector3 posicion = origenGrupo.position + desplazamiento;
                 var suelo = contenedorGrupo != null ? contenedorGrupo.GetComponent<RiftHuntersAR.AR.SueloCombateAR>() : null;
                 if (suelo != null) posicion = suelo.PosicionAparicion(posicion);
@@ -69,7 +69,7 @@ namespace RiftHunters.Combate
                     posicion = suelo.PosicionAparicion(origenGrupo.position + desplazamiento);
                     Vector3 diferencia = posicion - objetivoGrupo.position;
                     diferencia.y = 0f;
-                    if (!EstaPausado && diferencia.sqrMagnitude >= .8f * .8f) break;
+                    if (!EstaPausado && generados.Count < RiftHunters.Game.BalancePartida.MaximosSimultaneos && diferencia.sqrMagnitude >= .8f * .8f) break;
                     EsperandoDistancia = true;
                     yield return null;
                 }

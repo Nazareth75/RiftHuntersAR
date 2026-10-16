@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using RiftHuntersAR.Combat;
@@ -143,7 +143,7 @@ namespace RiftHuntersAR.UI.Visual
             if (armaActual != null && armaActual.EstaRecargando)
                 ammoValue.text += $" · {Mathf.RoundToInt(armaActual.ProgresoRecarga * 100)}%";
             bool jefe = controller != null && controller.EsJefe;
-            waveValue.text = jefe ? "JEFE" : wave > 0 ? $"{wave} / 4" : "— / 4";
+            waveValue.text = wave > 0 ? $"{wave} / 12" : "— / 12";
             enemyValue.text = alive.ToString();
             if (tiempoValue != null)
                 tiempoValue.text = FormatoTiempo(controller != null ? controller.TiempoPartida : 0f);
@@ -179,7 +179,8 @@ namespace RiftHuntersAR.UI.Visual
             if (detalleFin != null)
             {
                 int derrotados = controller != null ? controller.EnemigosDerrotados : 0;
-                detalleFin.text = $"PUNTOS: {points}\nENEMIGOS: {derrotados}\nTIEMPO: {FormatoTiempo(controller != null ? controller.TiempoPartida : 0f)}";
+                int eco = controller != null ? controller.GetComponent<RiftHuntersAR.Recycling.RecyclingGameplay>()?.EcoTotal ?? 0 : 0;
+                detalleFin.text = $"PUNTOS: {points}\nENEMIGOS: {derrotados} · ECO GANADO: {eco}\nTIEMPO: {FormatoTiempo(controller != null ? controller.TiempoPartida : 0f)}";
                 detalleFin.gameObject.SetActive(finished);
             }
             if (bossHUD != null)

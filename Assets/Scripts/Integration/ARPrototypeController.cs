@@ -303,11 +303,14 @@ namespace RiftHuntersAR.Integration
             if (pausa && enlaceCombate != null) enlaceCombate.Pausar(true);
         }
 
+        private float vidaPresentada = 100f;
         private void PlayerChanged()
         {
             int hearts = Mathf.CeilToInt(player.CurrentHealth / (100f / 3f));
             playerText.text = $"LIFE {hearts}/3 | {player.CurrentHealth:0} HP";
-            if (player.CurrentHealth < 100)
+            bool recibioDano = player.CurrentHealth < vidaPresentada;
+            vidaPresentada = player.CurrentHealth;
+            if (recibioDano)
             {
                 playerText.color = Color.red;
                 playerFlashUntil = Time.unscaledTime + .35f;
@@ -437,7 +440,7 @@ namespace RiftHuntersAR.Integration
                 else if (state == "WAVE" && !string.IsNullOrEmpty(AnuncioOleada)) statusText.text = AnuncioOleada;
                 else if (state == "WAVE") statusText.text = EsJefe
                     ? (NucleosJefe != null ? $"JEFE: {NucleosJefe.Pista}" : "JEFE")
-                    : $"OLEADA {wave}/4";
+                    : $"OLEADA {wave}/12";
                 else statusText.text = state == "VICTORY" ? "VICTORIA" : state == "GAME_OVER" ? "GAME OVER" : state;
                 if (state == "VICTORY" || state == "GAME_OVER") retryButton.gameObject.SetActive(true);
                 return;
@@ -508,10 +511,10 @@ namespace RiftHuntersAR.Integration
             else if (partida.EsJefe)
             {
                 state = "WAVE";
-                wave = 0;
+                wave = partida.NumeroOleada;
                 weapon.Ready = true;
             }
-            else if (partida.NumeroOleada > 0)
+            else if (partida.IsRunning && partida.NumeroOleada > 0)
             {
                 state = "WAVE";
                 wave = partida.NumeroOleada;
